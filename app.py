@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from sqlalchemy_utils.functions import database_exists, create_database
-from routes.auth_route import AuthBlueprint
+from routes.auth_bp import AuthBlueprint
 from models.database import db
 
 app = Flask(__name__)

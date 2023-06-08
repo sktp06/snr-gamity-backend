@@ -8,6 +8,7 @@ from models.user import User
 
 db = SQLAlchemy()
 
+
 class AuthController:
     @staticmethod
     def auth():
@@ -15,15 +16,28 @@ class AuthController:
             username = request.get_json()['username']
             password = request.get_json()['password']
 
-            try:
-                user = User.query.filter_by(username=username).first()
-                if (bcrypt.checkpw(password.encode('utf-8'), bytes(user.password, 'utf-8'))):
+            # Check if the username exists in the database
+            user = User.query.filter_by(username=username).first()
+
+            if user:
+                # User exists, perform login authentication
+                if bcrypt.checkpw(password.encode('utf-8'), bytes(user.password, 'utf-8')):
                     user_serialize = user.serialize
                     token = jwt.encode(
-                        {'user': user_serialize, 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, 'Bearer')
+                        {'user': user_serialize, 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)},
+                        'Bearer')
                     return jsonify({'user': user_serialize, 'token': token}), 200
-                raise
-            except:
-                return jsonify({'message': 'Email or password is incorrect'}), 401
-        except:
-            return jsonify({'message': 'The request body required username, password'}), 400
+                else:
+                    return jsonify({'message': 'Invalid password'}), 401
+            else:
+                # User does not exist, perform sign up
+                hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+                new_user = User(username=username, password=hashed_password)
+                db.session.add(new_user)
+                db.session.commit()
+
+                return jsonify({'message': 'User created successfully'}), 201
+
+        except KeyError:
+            return jsonify({'message': 'The request body requires username and password'}), 400
