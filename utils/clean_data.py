@@ -37,13 +37,13 @@ class Clean_data:
 
         return df
 
-    def pre_process(s):
-        ps = PorterStemmer()
-        s = word_tokenize(s)
-        s = [ps.stem(w) for w in s]
-        s = ' '.join(s)
-        s = s.translate(str.maketrans('', '', string.punctuation + u'\xa0'))
-        return s
+    # def pre_process(s):
+    #     ps = PorterStemmer()
+    #     s = word_tokenize(s)
+    #     s = [ps.stem(w) for w in s]
+    #     s = ' '.join(s)
+    #     s = s.translate(str.maketrans('', '', string.punctuation + u'\xa0'))
+    #     return s
 
 
 cleaner = Clean_data()  # Create an instance of the CleanData class
