@@ -1,3 +1,4 @@
+import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from spellchecker import SpellChecker
@@ -41,6 +42,17 @@ def query_summary():
     return results.to_json(orient='records')
 
 
+@app.route('/game/search', methods=['POST'])
+def search():
+    query = request.args.get('query')
+    spell_corr = [spell_checker.correction(w) for w in query.split()]
+    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+    results = parsed_data[
+        parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
+
+    return results.to_json(orient='records')
+
+
 @app.route('/correction', methods=['GET'])
 def correction():
     query = request.args['query']
@@ -48,6 +60,15 @@ def correction():
     if spell_corr[0] == None:
         return 'No correction'
     return jsonify(' '.join(spell_corr))
+
+
+@app.route('/game/data', methods=['GET'])
+def get_games():
+    with open('assets/parsed_data.pkl', 'rb') as file:
+        games = pickle.load(file)
+    results = pd.DataFrame(games)
+
+    return results.to_json(orient='records')
 
 
 if __name__ == '__main__':
