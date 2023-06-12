@@ -4,6 +4,7 @@ from flask_cors import CORS
 from spellchecker import SpellChecker
 from sqlalchemy_utils.functions import database_exists, create_database
 from routes.auth_bp import AuthBlueprint
+from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
 import pickle
 
@@ -22,6 +23,7 @@ with app.app_context():
     db.create_all()
 
 app.register_blueprint(AuthBlueprint.auth_bp)
+app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 
 @app.route('/game/name', methods=['POST'])
