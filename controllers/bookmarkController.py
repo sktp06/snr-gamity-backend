@@ -17,9 +17,10 @@ class BookmarkController:
                 raise Exception()
             games = []
             for b in bookmarks:
-                games.append(parsed_data[parsed_data['gameId'] == b['gameId']].to_dict('records')[0])
-            result = {'userId': userId, 'games': games}
-            return jsonify(result)
+                temp = parsed_data[parsed_data['id'] == b['game']].to_dict('records')[0]
+                games.append(
+                    {'id': temp['id'], 'name': temp['name'], 'cover': temp['cover'], })
+            return jsonify({'games': games}), 200
         except:
             return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)})
 
@@ -43,7 +44,7 @@ class BookmarkController:
         try:
             userId = request.get_json()['userId']
             gameId = request.get_json()['gameId']
-            bookmark = db.session.query(Bookmark).filter_by(user=userId, gameId=gameId).first()
+            bookmark = db.session.query(Bookmark).filter_by(user=userId, game=gameId).first()
             try:
                 db.session.delete(bookmark)
                 db.session.commit()

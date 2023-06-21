@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from spellchecker import SpellChecker
 from sqlalchemy_utils.functions import database_exists, create_database
+
+from models import Bookmark
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -72,6 +74,20 @@ def get_games():
 
     return results.to_json(orient='records')
 
+    # @app.route('/bookmarks/add', methods=['POST'])
+    # def add_bookmark():
+    #     try:
+    #         userId = request.get_json()['userId']
+    #         gameId = request.get_json()['gameId']
+    #         bookmark = Bookmark(userId, gameId)
+    #         try:
+    #             db.session.add(bookmark)
+    #             db.session.commit()
+    #             return jsonify({'message': 'The bookmark has been added successfully'})
+    #         except:
+    #             return jsonify({'message': 'Failed to add bookmark'}), 404
+    #     except:
+    #         return jsonify({'message': 'The request body requires userId and gameId'}), 400
 
 if __name__ == '__main__':
     app.run(debug=False)

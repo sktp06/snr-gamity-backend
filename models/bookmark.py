@@ -5,7 +5,7 @@ class Bookmark(db.Model):
     user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, primary_key=True)
     game = db.Column(db.Integer, nullable=False, primary_key=True)
 
-    def __int__(self, user, game):
+    def __init__(self, user, game):
         self.user = user
         self.game = game
 
