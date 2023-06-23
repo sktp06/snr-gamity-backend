@@ -1,17 +1,20 @@
 import pandas as pd
-from nltk import word_tokenize, PorterStemmer
 import string
 import pickle
+import re
 
 
 class Clean_data:
     def get_data(self, path):
         df = pd.read_json(path, orient='records')
         df.drop(columns=['hypes', 'platforms', 'rating_count', 'aggregated_rating_count'], inplace=True)
-        df['cover'] = df['cover'].apply(lambda x: x['url'] if isinstance(x, dict) else '')
+        df['cover'] = df['cover'].apply(
+            lambda x: x['url'].replace('t_thumb', 't_cover_big') if isinstance(x, dict) else '')
         df['genres'] = df['genres'].apply(lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
-        df['release_dates'] = df['release_dates'].apply(lambda x: [i['date'] for i in x] if isinstance(x, list) and all('date' in item for item in x) else [])
-        df['websites'] = df['websites'].apply(lambda x: [(i['url'], i['category_name']) for i in x] if isinstance(x, list) else [])
+        df['release_dates'] = df['release_dates'].apply(
+            lambda x: [i['date'] for i in x] if isinstance(x, list) and all('date' in item for item in x) else [])
+        df['websites'] = df['websites'].apply(
+            lambda x: [(i['url'], i['category_name']) for i in x] if isinstance(x, list) else [])
 
         # Cleaning game's name
         cleaned_name = df['name']
@@ -36,14 +39,6 @@ class Clean_data:
             pickle.dump(df, file)
 
         return df
-
-    # def pre_process(s):
-    #     ps = PorterStemmer()
-    #     s = word_tokenize(s)
-    #     s = [ps.stem(w) for w in s]
-    #     s = ' '.join(s)
-    #     s = s.translate(str.maketrans('', '', string.punctuation + u'\xa0'))
-    #     return s
 
 
 cleaner = Clean_data()  # Create an instance of the CleanData class
