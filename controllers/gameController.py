@@ -22,6 +22,15 @@ class GameController:
         return jsonify({'content': game_dict}), 200
 
     @staticmethod
+    def get_games_genre():
+        with open('../assets/parsed_data_genre.pkl', 'rb') as file:
+            games_genre = pickle.load(file)
+        df = pd.DataFrame(games_genre)
+        game_dict = df.to_dict('records')
+
+        return jsonify({'content': game_dict}), 200
+
+    @staticmethod
     def query_name():
         query = request.args.get('query')
         spell_corr = [spell_checker.correction(w) for w in query.split()]

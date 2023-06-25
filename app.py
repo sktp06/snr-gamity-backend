@@ -74,6 +74,15 @@ def get_games():
 
     return results.to_json(orient='records')
 
+
+@app.route('/game/genre', methods=['GET'])
+def get_games_genre():
+    with open('assets/parsed_data_genre.pkl', 'rb') as file:
+        games_genre = pickle.load(file)
+    results = pd.DataFrame(games_genre)
+
+    return results.to_json(orient='records')
+
     # @app.route('/bookmarks/add', methods=['POST'])
     # def add_bookmark():
     #     try:
@@ -88,6 +97,7 @@ def get_games():
     #             return jsonify({'message': 'Failed to add bookmark'}), 404
     #     except:
     #         return jsonify({'message': 'The request body requires userId and gameId'}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=False)
