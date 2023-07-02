@@ -1,4 +1,6 @@
 # gameControllers.py
+from datetime import datetime
+
 import pandas as pd
 from flask import jsonify, request
 import pickle
@@ -21,14 +23,14 @@ class GameController:
 
         return jsonify({'content': game_dict}), 200
 
-    @staticmethod
-    def get_games_genre():
-        with open('../assets/parsed_data_genre.pkl', 'rb') as file:
-            games_genre = pickle.load(file)
-        df = pd.DataFrame(games_genre)
-        game_dict = df.to_dict('records')
-
-        return jsonify({'content': game_dict}), 200
+    # @staticmethod
+    # def get_games_genre():
+    #     with open('../assets/parsed_data_genre.pkl', 'rb') as file:
+    #         games_genre = pickle.load(file)
+    #     df = pd.DataFrame(games_genre)
+    #     game_dict = df.to_dict('records')
+    #
+    #     return jsonify({'content': game_dict}), 200
 
     @staticmethod
     def query_name():
@@ -57,4 +59,20 @@ class GameController:
 
         return jsonify({'query': query, 'spell_corr': spell_corr, 'results_name': results.to_dict('records')}), 200
 
+    @staticmethod
+    def get_game_statistics():
+        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
+        total_games = len(parsed_data)
+
+        genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
+
+        update_date = datetime.now().strftime('%Y-%m-%d')
+
+        game_information = {
+            'update_date': update_date,
+            'total_games': total_games,
+            'genre_counts': genre_counts
+        }
+
+        return jsonify({'content': game_information}), 200
 

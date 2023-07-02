@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -75,13 +77,33 @@ def get_games():
     return results.to_json(orient='records')
 
 
-@app.route('/game/genre', methods=['GET'])
-def get_games_genre():
-    with open('assets/parsed_data_genre.pkl', 'rb') as file:
-        games_genre = pickle.load(file)
-    results = pd.DataFrame(games_genre)
+# @app.route('/game/genre', methods=['GET'])
+# def get_games_genre():
+#     with open('assets/parsed_data_genre.pkl', 'rb') as file:
+#         games_genre = pickle.load(file)
+#     results = pd.DataFrame(games_genre)
+#
+#     return results.to_json(orient='records')
 
-    return results.to_json(orient='records')
+
+@app.route('/game/stat', methods=['GET'])
+def get_game_statistics():
+    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+    total_games = len(parsed_data)
+
+    genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
+
+    update_date = datetime.now().strftime('%Y-%m-%d')
+
+    game_information = {
+        'update_date': update_date,
+        'total_games': total_games,
+        'genre_counts': genre_counts
+    }
+
+    return jsonify(game_information), 200
+
+
 
     # @app.route('/bookmarks/add', methods=['POST'])
     # def add_bookmark():
