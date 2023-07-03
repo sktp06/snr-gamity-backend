@@ -92,12 +92,14 @@ def get_game_statistics():
     total_games = len(parsed_data)
 
     genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
+    total_genres = len(genre_counts)
 
     update_date = datetime.now().strftime('%Y-%m-%d')
 
     game_information = {
         'update_date': update_date,
         'total_games': total_games,
+        'total_genres': total_genres,  # Add total number of genres
         'genre_counts': genre_counts
     }
 
