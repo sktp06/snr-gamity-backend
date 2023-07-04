@@ -3,10 +3,11 @@ from datetime import datetime
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from passlib.handlers.bcrypt import bcrypt
 from spellchecker import SpellChecker
 from sqlalchemy_utils.functions import database_exists, create_database
 
-from models import Bookmark
+from models import Bookmark, User
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -122,6 +123,30 @@ def get_game_statistics():
     #     except:
     #         return jsonify({'message': 'The request body requires userId and gameId'}), 400
 
+@app.route('/auth/register', methods=['POST'])
+def register():
+    try:
+        username = request.get_json()['username']
+        password = request.get_json()['password']
 
+        # Check if the username already exists in the user table
+        existing_user = User.query.filter_by(username=username).first()
+
+        if existing_user:
+            return jsonify({'message': 'Username already exists'}), 400
+
+        # Set the default role for the user
+        default_role = 'user'
+
+        # Create a new user
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        new_user = User(username=username, password=hashed_password, role=default_role)
+        db.session.add(new_user)
+        db.session.commit()
+
+        return jsonify({'message': 'Registration successful'}), 201
+
+    except KeyError:
+        return jsonify({'message': 'The request body requires username and password'}), 400
 if __name__ == '__main__':
     app.run(debug=False)
