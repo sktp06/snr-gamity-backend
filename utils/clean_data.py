@@ -10,7 +10,10 @@ class CleanData:
         df.drop(columns=['hypes', 'platforms'], inplace=True)
         df['cover'] = df['cover'].apply(lambda x: x['url'].replace('t_thumb', 't_cover_big') if isinstance(x, dict) else '')
         df['genres'] = df['genres'].apply(lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
-        df['release_dates'] = df['release_dates'].apply(lambda x: [i['date'] for i in x] if isinstance(x, list) and all('date' in item for item in x) else [])
+        # Clean release_dates field
+        df['release_dates'] = df['release_dates'].apply(
+            lambda x: [i['date'] for i in x] if isinstance(x, list) and all('date' in item for item in x) else [])
+        df['release_dates'] = df['release_dates'].apply(lambda x: x[0] if len(x) > 0 else '')
         df['websites'] = df['websites'].apply(lambda x: [(i['url'], i['category_name']) for i in x] if isinstance(x, list) else [])
 
         # Cleaning game's name
