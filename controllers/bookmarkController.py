@@ -1,55 +1,51 @@
+import pickle
+
 from flask import jsonify, request
 from models.bookmark import Bookmark
-from flask_sqlalchemy import SQLAlchemy
-import pickle
-db = SQLAlchemy()
-parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+from models.database import db
 
 
 class BookmarkController:
     @staticmethod
     def getBookmarkByUserId():
-        userId = request.get_json()['userId']
         try:
-            bookmarks = db.session.query(Bookmark).filter_by(user=userId).all()
-            bookmarks = Bookmark.serialize_list(bookmarks)
-            if not len(bookmarks):
-                raise Exception()
+            userId = request.json['userId']
+            bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+            if not bookmarks:
+                return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+
             games = []
+            parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
             for b in bookmarks:
-                temp = parsed_data[parsed_data['id'] == b['game']].to_dict('records')[0]
-                games.append(
-                    {'id': temp['id'], 'name': temp['name'], 'cover': temp['cover'], })
+                temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
+                games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
+
             return jsonify({'games': games}), 200
         except:
-            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)})
+            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
 
     @staticmethod
     def addBookmark():
         try:
-            userId = request.get_json()['userId']
-            gameId = request.get_json()['gameId']
+            userId = request.json['userId']
+            gameId = request.json['gameId']
             bookmark = Bookmark(userId, gameId)
-            try:
-                db.session.add(bookmark)
-                db.session.commit()
-            except:
-                return jsonify({'message': 'Failed to add bookmark'}), 404
-            return jsonify({'message': 'The bookmark has been added successfully'})
+            db.session.add(bookmark)
+            db.session.commit()
+            return jsonify({'message': 'The bookmark has been added successfully'}), 200
         except:
             return jsonify({'message': 'The request body requires userId and gameId'}), 400
 
     @staticmethod
     def removeBookmark():
         try:
-            userId = request.get_json()['userId']
-            gameId = request.get_json()['gameId']
-            bookmark = db.session.query(Bookmark).filter_by(user=userId, game=gameId).first()
-            try:
-                db.session.delete(bookmark)
-                db.session.commit()
-            except:
+            userId = request.json['userId']
+            gameId = request.json['gameId']
+            bookmark = Bookmark.query.filter_by(user_id=userId, game_id=gameId).first()
+            if not bookmark:
                 return jsonify({'message': 'This bookmark does not exist'}), 404
-            return jsonify({'message': 'The bookmark has been deleted successfully'})
+            db.session.delete(bookmark)
+            db.session.commit()
+            return jsonify({'message': 'The bookmark has been deleted successfully'}), 200
         except:
             return jsonify({'message': 'The request body requires userId and gameId'}), 400

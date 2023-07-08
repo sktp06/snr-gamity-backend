@@ -140,5 +140,24 @@ def register():
         return jsonify({'message': 'The request body requires username and password'}), 400
 
 
+@app.route('/bookmarks/', methods=['POST'])
+def getBookmarkByUserId():
+    try:
+        userId = request.json['userId']
+        bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+        if not bookmarks:
+            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+
+        games = []
+        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+        for b in bookmarks:
+            temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
+            games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
+
+        return jsonify({'games': games}), 200
+    except:
+        return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+
+
 if __name__ == '__main__':
     app.run(debug=False)
