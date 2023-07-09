@@ -34,7 +34,7 @@ class BookmarkController:
             db.session.commit()
             return jsonify({'message': 'The bookmark has been added successfully'}), 200
         except:
-            return jsonify({'message': 'The request body requires userId and gameId'}), 400
+            return jsonify({'message': 'Failed to add, maybe you already have this game in the list.'}), 400
 
     @staticmethod
     def removeBookmark():
@@ -48,4 +48,4 @@ class BookmarkController:
             db.session.commit()
             return jsonify({'message': 'The bookmark has been deleted successfully'}), 200
         except:
-            return jsonify({'message': 'The request body requires userId and gameId'}), 400
+            return jsonify({'message': 'Failed to remove from the list'}), 400
