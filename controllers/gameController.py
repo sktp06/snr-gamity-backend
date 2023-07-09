@@ -1,4 +1,5 @@
 # gameControllers.py
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -50,22 +51,28 @@ class GameController:
 
         return jsonify({'query': query, 'spell_corr': spell_corr, 'results_name': results.to_dict('records')}), 200
 
+    import os
+
     @staticmethod
     def get_game_statistics():
-        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
+        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
         total_games = len(parsed_data)
 
         genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
         total_genres = len(genre_counts)
 
-        update_date = datetime.now().strftime('%Y-%m-%d')
+        # Get the modification time of the clean_data.py file
+        clean_data_file = os.path.join(os.path.dirname(__file__), 'utils/game_time_data.py')
+        modification_time = os.path.getmtime(clean_data_file)
+        update_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
 
         game_information = {
             'update_date': update_date,
             'total_games': total_games,
-            'total_genres': total_genres,  # Add total number of genres
+            'total_genres': total_genres,
             'genre_counts': genre_counts
         }
 
         return jsonify({'content': game_information}), 200
+
 

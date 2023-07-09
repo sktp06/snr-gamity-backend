@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -12,6 +13,7 @@ from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
 import pickle
+import datetime
 
 spell_checker = SpellChecker(language='en')
 
@@ -78,6 +80,8 @@ def get_games():
     return results.to_json(orient='records')
 
 
+from flask import jsonify
+
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
@@ -86,16 +90,19 @@ def get_game_statistics():
     genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
     total_genres = len(genre_counts)
 
-    update_date = datetime.now().strftime('%Y-%m-%d')
+    # Get the modification time of the clean_data.py file
+    clean_data_file = os.path.join(os.path.dirname(__file__), 'utils/game_time_data.py')
+    modification_time = os.path.getmtime(clean_data_file)
+    update_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
 
     game_information = {
         'update_date': update_date,
         'total_games': total_games,
-        'total_genres': total_genres,  # Add total number of genres
+        'total_genres': total_genres,
         'genre_counts': genre_counts
     }
 
-    return jsonify(game_information), 200
+    return jsonify({'content': game_information}), 200
 
     # @app.route('/bookmarks/add', methods=['POST'])
     # def add_bookmark():
