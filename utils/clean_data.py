@@ -15,6 +15,7 @@ class CleanData:
             lambda x: [i['date'] for i in x] if isinstance(x, list) and all('date' in item for item in x) else [])
         df['release_dates'] = df['release_dates'].apply(lambda x: x[0] if len(x) > 0 else '')
         df['websites'] = df['websites'].apply(lambda x: [(i['url'], i['category_name']) for i in x] if isinstance(x, list) else [])
+        df['unclean_summary'] = df['summary']
 
         # Cleaning game's name
         cleaned_name = df['name']

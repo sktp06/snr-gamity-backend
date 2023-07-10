@@ -80,8 +80,6 @@ def get_games():
     return results.to_json(orient='records')
 
 
-from flask import jsonify
-
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
