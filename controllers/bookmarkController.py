@@ -18,7 +18,8 @@ class BookmarkController:
             parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
             for b in bookmarks:
                 temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
-                games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
+                games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover'],
+                              'release_dates': temp['release_dates']})
 
             return jsonify({'games': games}), 200
         except:
