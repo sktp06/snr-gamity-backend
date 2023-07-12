@@ -124,6 +124,9 @@ def register():
         username = request.get_json()['username']
         password = request.get_json()['password']
 
+        if username is None or password is None:
+            return jsonify({'message': 'The username and password cannot be null'}), 400
+
         # Check if the username already exists in the user table
         existing_user = User.query.filter_by(username=username).first()
 
