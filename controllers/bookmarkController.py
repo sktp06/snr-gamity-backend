@@ -1,3 +1,4 @@
+import math
 import pickle
 
 from flask import jsonify, request
@@ -28,8 +29,8 @@ class BookmarkController:
                               'main_extra': temp['main_extra'],
                               'completionist': temp['completionist'],
                               'websites': temp['websites'],
-                              # 'aggregated_rating': temp['aggregated_rating'],
-                              # 'rating': temp['rating']
+                              'aggregated_rating': temp['aggregated_rating'] if not math.isnan(temp['aggregated_rating']) else 0,
+                              'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
                               })
             return jsonify({'games': games}), 200
         except:
