@@ -1,9 +1,8 @@
-# gameControllers.py
 import os
 from datetime import datetime
 
 import pandas as pd
-from flask import jsonify, request
+from flask import jsonify
 import pickle
 from spellchecker import SpellChecker
 
@@ -23,35 +22,6 @@ class GameController:
         game_dict = df.to_dict('records')
 
         return jsonify({'content': game_dict}), 200
-
-    @staticmethod
-    def query_name():
-        query = request.args.get('query')
-        spell_corr = [spell_checker.correction(w) for w in query.split()]
-        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
-        results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
-
-        return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
-
-    @staticmethod
-    def query_summary():
-        query = request.args.get('query')
-        spell_corr = [spell_checker.correction(w) for w in query.split()]
-        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
-        results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
-
-        return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
-
-    @staticmethod
-    def search():
-        query = request.args.get('query')
-        spell_corr = [spell_checker.correction(w) for w in query.split()]
-        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
-        results = parsed_data[parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
-
-        return jsonify({'query': query, 'spell_corr': spell_corr, 'results_name': results.to_dict('records')}), 200
-
-    import os
 
     @staticmethod
     def get_game_statistics():
@@ -74,5 +44,31 @@ class GameController:
         }
 
         return jsonify({'content': game_information}), 200
+
+    # @staticmethod
+    # def query_name():
+    #     query = request.args.get('query')
+    #     spell_corr = [spell_checker.correction(w) for w in query.split()]
+    #     parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
+    #     results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
+    #
+    #     return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
+    #
+    # @staticmethod
+    # def query_summary():
+    #     query = request.args.get('query')
+    #     spell_corr = [spell_checker.correction(w) for w in query.split()]
+    #     parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
+    #     results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
+    #
+    #     return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
+    #
+    # @staticmethod def search(): query = request.args.get('query') spell_corr = [spell_checker.correction(w) for w
+    # in query.split()] parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb')) results = parsed_data[
+    # parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
+    #
+    #     return jsonify({'query': query, 'spell_corr': spell_corr, 'results_name': results.to_dict('records')}), 200
+
+
 
 

@@ -33,44 +33,6 @@ app.register_blueprint(AuthBlueprint.auth_bp)
 app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 
-@app.route('/game/name', methods=['POST'])
-def query_name():
-    query = request.args.get('query')
-    spell_corr = [spell_checker.correction(w) for w in query.split()]
-    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-    results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
-    return results.to_json(orient='records')
-
-
-@app.route('/game/summary', methods=['POST'])
-def query_summary():
-    query = request.args.get('query')
-    spell_corr = [spell_checker.correction(w) for w in query.split()]
-    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-    results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
-    return results.to_json(orient='records')
-
-
-@app.route('/game/search', methods=['POST'])
-def search():
-    query = request.args.get('query')
-    spell_corr = [spell_checker.correction(w) for w in query.split()]
-    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-    results = parsed_data[
-        parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
-
-    return results.to_json(orient='records')
-
-
-@app.route('/correction', methods=['GET'])
-def correction():
-    query = request.args['query']
-    spell_corr = [spell_checker.correction(w) for w in query.split()]
-    if spell_corr[0] == None:
-        return 'No correction'
-    return jsonify(' '.join(spell_corr))
-
-
 @app.route('/game/data', methods=['GET'])
 def get_games():
     with open('assets/parsed_data.pkl', 'rb') as file:
@@ -102,20 +64,40 @@ def get_game_statistics():
 
     return jsonify({'content': game_information}), 200
 
-    # @app.route('/bookmarks/add', methods=['POST'])
-    # def add_bookmark():
-    #     try:
-    #         userId = request.get_json()['userId']
-    #         gameId = request.get_json()['gameId']
-    #         bookmark = Bookmark(userId, gameId)
-    #         try:
-    #             db.session.add(bookmark)
-    #             db.session.commit()
-    #             return jsonify({'message': 'The bookmark has been added successfully'})
-    #         except:
-    #             return jsonify({'message': 'Failed to add bookmark'}), 404
-    #     except:
-    #         return jsonify({'message': 'The request body requires userId and gameId'}), 400
+
+@app.route('/bookmarks/', methods=['POST'])
+def getBookmarkByUserId():
+    try:
+        userId = request.json['userId']
+        bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+        if not bookmarks:
+            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+
+        games = []
+        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+        for b in bookmarks:
+            temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
+            games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
+
+        return jsonify({'games': games}), 200
+    except:
+        return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+
+
+@app.route('/bookmarks/add', methods=['POST'])
+def add_bookmark():
+    try:
+        userId = request.get_json()['userId']
+        gameId = request.get_json()['gameId']
+        bookmark = Bookmark(userId, gameId)
+        try:
+            db.session.add(bookmark)
+            db.session.commit()
+            return jsonify({'message': 'The bookmark has been added successfully'})
+        except:
+            return jsonify({'message': 'Failed to add bookmark'}), 404
+    except:
+        return jsonify({'message': 'The request body requires userId and gameId'}), 400
 
 
 @app.route('/auth/register', methods=['POST'])
@@ -147,25 +129,42 @@ def register():
     except KeyError:
         return jsonify({'message': 'The request body requires username and password'}), 400
 
+# @app.route('/game/name', methods=['POST'])
+# def query_name():
+#     query = request.args.get('query')
+#     spell_corr = [spell_checker.correction(w) for w in query.split()]
+#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+#     results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
+#     return results.to_json(orient='records')
+#
+#
+# @app.route('/game/summary', methods=['POST'])
+# def query_summary():
+#     query = request.args.get('query')
+#     spell_corr = [spell_checker.correction(w) for w in query.split()]
+#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+#     results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
+#     return results.to_json(orient='records')
 
-@app.route('/bookmarks/', methods=['POST'])
-def getBookmarkByUserId():
-    try:
-        userId = request.json['userId']
-        bookmarks = Bookmark.query.filter_by(user_id=userId).all()
-        if not bookmarks:
-            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
 
-        games = []
-        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-        for b in bookmarks:
-            temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
-            games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
+# @app.route('/game/search', methods=['POST'])
+# def search():
+#     query = request.args.get('query')
+#     spell_corr = [spell_checker.correction(w) for w in query.split()]
+#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+#     results = parsed_data[
+#         parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
+#
+#     return results.to_json(orient='records')
 
-        return jsonify({'games': games}), 200
-    except:
-        return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
 
+# @app.route('/correction', methods=['GET'])
+# def correction():
+#     query = request.args['query']
+#     spell_corr = [spell_checker.correction(w) for w in query.split()]
+#     if spell_corr[0] == None:
+#         return 'No correction'
+#     return jsonify(' '.join(spell_corr))
 
 if __name__ == '__main__':
     app.run(debug=False)
