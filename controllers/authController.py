@@ -41,6 +41,7 @@ class AuthController:
         try:
             username = request.get_json()['username']
             password = request.get_json()['password']
+            confirm_password = request.get_json()['confirm_password']
 
             if username is None or password is None:
                 return jsonify({'message': 'The username and password cannot be null'}), 400
@@ -53,10 +54,13 @@ class AuthController:
 
             # Validate username and password format
             if not re.match(r'^[a-zA-Z0-9]+$', username):
-                return jsonify({'message': 'Username should only contain alphanumeric characters'}), 400
+                return jsonify({'message': 'Username should only contain alphanumeric characters(A-Z, a-z, 0-9)'}), 400
 
             if not isinstance(password, str) or len(password) < 6:
                 return jsonify({'message': 'Password should be a string with at least 6 characters'}), 400
+
+            if password != confirm_password:
+                return jsonify({'message': 'Password and Confirm Password do not match'}), 400
 
             # Set the default role for the user
             default_role = 'user'
