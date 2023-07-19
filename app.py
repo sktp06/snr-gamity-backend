@@ -124,7 +124,7 @@ def register():
             return jsonify({'message': 'Password should be a string with at least 6 characters'}), 400
 
         if password != confirm_password:
-            return jsonify({'message': 'Password and Confirm Password do not match'}), 400
+            return jsonify({'message': 'Passwords must match'}), 400
 
         # Set the default role for the user
         default_role = 'user'
