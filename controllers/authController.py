@@ -3,6 +3,7 @@ import jwt
 import datetime
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import re
 
 from models.user import User
 
@@ -50,6 +51,13 @@ class AuthController:
             if existing_user:
                 return jsonify({'message': 'Username already exists'}), 400
 
+            # Validate username and password format
+            if not re.match(r'^[a-zA-Z0-9]+$', username):
+                return jsonify({'message': 'Username should only contain alphanumeric characters'}), 400
+
+            if not isinstance(password, str) or len(password) < 6:
+                return jsonify({'message': 'Password should be a string with at least 6 characters'}), 400
+
             # Set the default role for the user
             default_role = 'user'
 
@@ -63,5 +71,4 @@ class AuthController:
 
         except KeyError:
             return jsonify({'message': 'The request body requires username and password'}), 400
-
 
