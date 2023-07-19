@@ -1,3 +1,4 @@
+import math
 import os
 from datetime import datetime
 
@@ -67,21 +68,30 @@ def get_game_statistics():
 
 @app.route('/bookmarks/', methods=['POST'])
 def getBookmarkByUserId():
-    try:
-        userId = request.json['userId']
-        bookmarks = Bookmark.query.filter_by(user_id=userId).all()
-        if not bookmarks:
-            return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+    userId = request.json['userId']
+    bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+    if not bookmarks:
+        return jsonify({'message': 'The bookmark list is empty'}), 404
 
-        games = []
-        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-        for b in bookmarks:
-            temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
-            games.append({'id': temp['id'], 'name': temp['name'], 'cover': temp['cover']})
-
-        return jsonify({'games': games}), 200
-    except:
-        return jsonify({'message': 'The bookmark for userId {} does not exist'.format(userId)}), 404
+    games = []
+    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+    for b in bookmarks:
+        temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
+        games.append({'id': temp['id'],
+                      'name': temp['name'],
+                      'cover': temp['cover'],
+                      'release_dates': temp['release_dates'],
+                      'unclean_summary': temp['unclean_summary'],
+                      'genres': temp['genres'],
+                      'main_story': temp['main_story'],
+                      'main_extra': temp['main_extra'],
+                      'completionist': temp['completionist'],
+                      'websites': temp['websites'],
+                      'aggregated_rating': temp['aggregated_rating'] if not math.isnan(
+                          temp['aggregated_rating']) else 0,
+                      'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
+                      })
+    return jsonify({'games': games}), 200
 
 
 @app.route('/bookmarks/add', methods=['POST'])
