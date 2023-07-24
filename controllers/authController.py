@@ -74,5 +74,5 @@ class AuthController:
             return jsonify({'message': 'Registration successful'}), 201
 
         except KeyError:
-            return jsonify({'message': 'The request body requires username and password'}), 400
+            return jsonify({'message': 'The request body requires username and password, confirm_password'}), 400
 

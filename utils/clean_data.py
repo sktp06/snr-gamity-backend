@@ -5,6 +5,7 @@ import re
 
 
 class CleanData:
+    # cleaned_data
     def get_data(self, path):
         df = pd.read_json(path, orient='records')
         df.drop(columns=['hypes', 'platforms'], inplace=True)
@@ -39,8 +40,11 @@ class CleanData:
         df['popularity'] = df.apply(lambda row: self.calculate_popularity(row), axis=1)
 
         # Save cleaned data to pickle file
-        with open('../assets/parsed_data.pkl', 'wb') as file:
-            pickle.dump(df, file)
+        # with open('../assets/parsed_data.pkl', 'wb') as file:
+        #     pickle.dump(df, file)
+
+        json_filename = '../assets/parsed_data.json'
+        df.to_json(json_filename, orient='records')
 
         return df
 

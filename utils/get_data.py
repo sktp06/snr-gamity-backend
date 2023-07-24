@@ -78,6 +78,12 @@ class GameDataRetriever:
                             category_name = self.map_website_category(category_id)
                             website['category_name'] = category_name
 
+                    cover = game.get('cover')
+                    if cover:
+                        image_id = cover.get('image_id')
+                        if image_id:
+                            cover['url'] = f'https://images.igdb.com/igdb/image/upload/t_cover_big/{image_id}.jpg'
+
                 all_games.extend(data)
                 offset += limit
                 print(f'Retrieved data for page {page}')
@@ -97,6 +103,7 @@ class GameDataRetriever:
         json_filename = 'games.json'
         self.save_to_json(all_games, json_filename)
         print(f'Successfully saved the data to {json_filename}')
+
 
 retriever = GameDataRetriever()
 retriever.execute()

@@ -52,8 +52,8 @@ class BookmarkController:
             userId = request.json['userId']
             gameId = request.json['gameId']
             bookmark = Bookmark.query.filter_by(user_id=userId, game_id=gameId).first()
-            if not bookmark:
-                return jsonify({'message': 'This bookmark does not exist'}), 404
+            # if not bookmark:
+            #     return jsonify({'message': 'This bookmark does not exist'}), 404
             db.session.delete(bookmark)
             db.session.commit()
             return jsonify({'message': 'The bookmark has been deleted successfully'}), 200

@@ -23,7 +23,7 @@ class GameTimeMatcher:
 
         return game_data, result
 
-    def match_time_to_beat(self, filename):
+    def map_time_to_beat(self, filename):
         # Load game data from JSON file
         with open(filename) as f:
             games_data = json.load(f)
@@ -59,7 +59,7 @@ class GameTimeMatcher:
 
 # Usage example
 hltb = HowLongToBeat()
-filename = '../assets/games.json'
+filename = '../utils/games.json'
 
 matcher = GameTimeMatcher(hltb)
-matcher.match_time_to_beat(filename)
+matcher.map_time_to_beat(filename)
