@@ -95,19 +95,16 @@ def getBookmarkByUserId():
 
 
 @app.route('/bookmarks/add', methods=['POST'])
-def add_bookmark():
+def addBookmark():
     try:
-        userId = request.get_json()['userId']
-        gameId = request.get_json()['gameId']
+        userId = request.json['userId']
+        gameId = request.json['gameId']
         bookmark = Bookmark(userId, gameId)
-        try:
-            db.session.add(bookmark)
-            db.session.commit()
-            return jsonify({'message': 'The bookmark has been added successfully'})
-        except:
-            return jsonify({'message': 'Failed to add bookmark'}), 404
+        db.session.add(bookmark)
+        db.session.commit()
+        return jsonify({'message': 'The bookmark has been added successfully'}), 200
     except:
-        return jsonify({'message': 'The request body requires userId and gameId'}), 400
+        return jsonify({'message': 'Failed to add, maybe you already have this game in the list.'}), 400
 
 
 @app.route('/auth/register', methods=['POST'])
