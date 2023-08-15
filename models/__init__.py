@@ -20,6 +20,8 @@ def create_user(*args, **kwargs):
 def create_bookmark(*args, **kwargs):
     db.session.add(Bookmark(user_id=2, game_id=21874))
     db.session.add(Bookmark(user_id=2, game_id=22713))
+    db.session.add(Bookmark(user_id=2, game_id=115286))
+    db.session.add(Bookmark(user_id=2, game_id=194662))
     db.session.add(Bookmark(user_id=3, game_id=115286))
     db.session.add(Bookmark(user_id=3, game_id=194662))
     db.session.add(Bookmark(user_id=4, game_id=132769))

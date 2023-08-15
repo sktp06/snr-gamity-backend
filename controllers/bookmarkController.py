@@ -1,3 +1,4 @@
+import json
 import math
 import pickle
 
@@ -65,72 +66,43 @@ class BookmarkController:
             return jsonify({'message': 'Failed to remove from the list'}), 400
 
     @staticmethod
-    def recommendGamesByBookmarks():
+    def recommendGames():
         try:
             userId = request.json['userId']
+            user_bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+            if not user_bookmarks:
+                return jsonify({'message': 'No bookmarks found for this user'}), 404
 
-            bookmarks = Bookmark.query.filter_by(user_id=userId).all()
-
-            if not bookmarks:
-                return jsonify({'message': 'The bookmark list is empty'}), 404
-
-            # Load parsed game data
             parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
 
-            # Extract unclean summaries and game IDs from bookmarks
-            bookmarked_game_ids = [b.game_id for b in bookmarks]
-            unclean_summaries = [parsed_data[parsed_data['id'] == game_id]['unclean_summary'].values[0] for game_id in
-                                 bookmarked_game_ids]
+            # Extract genres for user's bookmarked games
+            user_genres = set()
+            for b in user_bookmarks:
+                temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
+                user_genres.update(temp['genres'])
 
-            # Train Word2Vec model
-            vector_size = 300
-            word2vec_model = Word2Vec(sentences=[summary.split() for summary in unclean_summaries],
-                                      vector_size=vector_size, window=5, min_count=2, workers=-1)
-
-            # Define a function to get the vector representation of a game summary
-            def get_game_vector(unclean_summary):
-                words = unclean_summary.split()
-                vector_sum = np.zeros(word2vec_model.vector_size)
-                count = 0
-                for word in words:
-                    if word in word2vec_model.wv:
-                        vector_sum += word2vec_model.wv[word]
-                        count += 1
-                if count > 0:
-                    return vector_sum / count
-                return vector_sum
-
-            # Calculate similarity scores using Word2Vec vectors
-            target_word2vec_vectors = [get_game_vector(summary) for summary in unclean_summaries]
-            word2vec_similarity_scores = cosine_similarity(target_word2vec_vectors, target_word2vec_vectors).flatten()
-
-            # Get recommended games based on similarity
-            num_recommendations = 5
-            sorted_indices = np.argsort(word2vec_similarity_scores)[::-1]
-            recommended_indices = sorted_indices[1:num_recommendations + 1]
-            recommended_game_ids = [bookmarked_game_ids[idx] for idx in recommended_indices]
-
-            # Create a list of recommended game details
+            # Find games with similar genres and high aggregated_rating to recommend
             recommended_games = []
-            for game_id in recommended_game_ids:
-                temp = parsed_data[parsed_data['id'] == game_id].to_dict('records')[0]
-                recommended_games.append({
-                    'id': temp['id'],
-                    'name': temp['name'],
-                    'cover': temp['cover'],
-                    'release_dates': temp['release_dates'],
-                    'unclean_summary': temp['unclean_summary'],
-                    'genres': temp['genres'],
-                    'main_story': temp['main_story'],
-                    'main_extra': temp['main_extra'],
-                    'completionist': temp['completionist'],
-                    'websites': temp['websites'],
-                    'aggregated_rating': temp['aggregated_rating'] if not math.isnan(temp['aggregated_rating']) else 0,
-                    'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
-                })
+            for idx, game in parsed_data.iterrows():
+                if len(recommended_games) >= 10:
+                    break
+
+                if game['id'] not in [b.game_id for b in user_bookmarks]:
+                    common_genres = user_genres.intersection(game['genres'])
+                    if common_genres and not math.isnan(game['aggregated_rating']):
+                        recommended_games.append({
+                            'id': game['id'],
+                            'name': game['name'],
+                            'cover': game['cover'],
+                            'genres': game['genres'],
+                            'aggregated_rating': game['aggregated_rating'],
+                            'rating': game['rating'] if not math.isnan(game['rating']) else 0,
+                            'common_genres': list(common_genres)
+                        })
+
+            recommended_games.sort(key=lambda x: (x['aggregated_rating'], x['rating']), reverse=True)
+            recommended_games = recommended_games[:20]  # Keep only the top 10 recommendations
 
             return jsonify({'recommended_games': recommended_games}), 200
         except:
-            # Handle exceptions and errors
             return jsonify({'message': 'Failed to recommend games'}), 400
-
