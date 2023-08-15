@@ -7,3 +7,4 @@ class BookmarkBlueprint:
     bookmark_bp.route('/', methods=['POST'])(BookmarkController.getBookmarkByUserId)
     bookmark_bp.route('/add', methods=['POST'])(BookmarkController.addBookmark)
     bookmark_bp.route('/remove', methods=['POST'])(BookmarkController.removeBookmark)
+    bookmark_bp.route('/recommend', methods=['POST'])(BookmarkController.recommendGamesByBookmarks)
