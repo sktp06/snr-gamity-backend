@@ -75,6 +75,10 @@ class BookmarkController:
 
             parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
 
+            # Load or train Word2Vec model on game descriptions
+            descriptions = parsed_data['unclean_summary'].tolist()
+            model = Word2Vec(sentences=descriptions, vector_size=100, window=5, min_count=1, sg=0)
+
             # Extract genres for user's bookmarked games
             user_genres = set()
             for b in user_bookmarks:
@@ -90,6 +94,9 @@ class BookmarkController:
                 if game['id'] not in [b.game_id for b in user_bookmarks]:
                     common_genres = user_genres.intersection(game['genres'])
                     if common_genres and not math.isnan(game['aggregated_rating']):
+                        # Calculate similarity score based on word embeddings
+                        similarity_score = model.wv.n_similarity(descriptions, game['unclean_summary'].split())
+
                         recommended_games.append({
                             'id': game['id'],
                             'name': game['name'],
@@ -97,11 +104,13 @@ class BookmarkController:
                             'genres': game['genres'],
                             'aggregated_rating': game['aggregated_rating'],
                             'rating': game['rating'] if not math.isnan(game['rating']) else 0,
-                            'common_genres': list(common_genres)
+                            'common_genres': list(common_genres),
+                            'word_similarity_score': similarity_score
                         })
 
-            recommended_games.sort(key=lambda x: (x['aggregated_rating'], x['rating']), reverse=True)
-            recommended_games = recommended_games[:20]  # Keep only the top 10 recommendations
+            recommended_games.sort(key=lambda x: (x['aggregated_rating'], x['rating'], x['word_similarity_score']),
+                                   reverse=True)
+            recommended_games = recommended_games[:20]  # Keep only the top 20 recommendations
 
             return jsonify({'recommended_games': recommended_games}), 200
         except:
