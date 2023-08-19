@@ -1,64 +1,47 @@
-import json
+import pandas as pd
 import numpy as np
-from gensim.models import Word2Vec
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
 
-# Load parsed data from JSON file
-with open('../assets/parsed_data.json', 'r') as f:
-    games_data = json.load(f)
+# Load your data
+df = pd.read_csv('assets/parsed_data.csv')
+df['summary'] = df['summary'].fillna('')
 
-# Extract unclean summaries
-unclean_summaries = [game['unclean_summary'] for game in games_data]
+# Create a TfidfVectorizer and fit_transform your data
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(df['summary'])
 
-# Filter out None values
-unclean_summaries = [summary for summary in unclean_summaries if summary is not None]
+# Batch size for processing
+batch_size = 1000
 
-# Train Word2Vec model
-word2vec_model = Word2Vec(sentences=[summary.split() for summary in unclean_summaries],
-                          vector_size=300, window=5, min_count=2, workers=-1)
+# Compute cosine similarity in batches
+num_docs = tfidf_matrix.shape[0]
+cosine_sim = np.zeros((num_docs, num_docs), dtype='uint8')
 
-# Function to get game vector using Word2Vec
-def get_game_vector(unclean_summary):
-    words = unclean_summary.split()
-    vector_sum = np.zeros(word2vec_model.vector_size)
-    count = 0
-    for word in words:
-        if word in word2vec_model.wv:
-            vector_sum += word2vec_model.wv[word]
-            count += 1
-    if count > 0:
-        return vector_sum / count
-    return vector_sum
+for i in range(0, num_docs, batch_size):
+    start = i
+    end = min(i + batch_size, num_docs)
+    batch_cosine_sim = linear_kernel(tfidf_matrix[start:end, :], tfidf_matrix)
+    batch_cosine_sim_uint8 = (batch_cosine_sim * 255).astype('uint8')
+    cosine_sim[start:end, :] = batch_cosine_sim_uint8
 
-# Input the target game index
-target_game_index = 72  # Replace with your desired target game index
-target_game_unclean_summary = unclean_summaries[target_game_index]
+print("Cosine similarity matrix computed successfully.")
 
-# Calculate similarity scores using Word2Vec vectors and aggregated_rating
-target_word2vec_vector = get_game_vector(target_game_unclean_summary)
-target_aggregated_rating = games_data[target_game_index]['aggregated_rating']
+# Create a Series with movie indices
+indices = pd.Series(df.index, index=df['name']).drop_duplicates()
 
-similarity_scores = []
-for unclean_summary in unclean_summaries:
-    similarity_score = cosine_similarity([target_word2vec_vector], [get_game_vector(unclean_summary)])[0][0]
-    similarity_scores.append(similarity_score)
+def get_recommendations(name, cosine_sim=cosine_sim, num_recommend=10):
+    idx = indices[name]
+    # Get the pairwsie similarity scores of all movies with that movie
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    # Sort the movies based on the similarity scores
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    # Get the scores of the 10 most similar movies
+    top_similar = sim_scores[1:num_recommend + 1]
+    # Get the movie indices
+    movie_indices = [i[0] for i in top_similar]
+    # Return the top 10 most similar movies
+    return df['name'].iloc[movie_indices]
 
-# Get recommended games
-num_recommendations = 10
-sorted_indices = np.argsort(similarity_scores)[::-1]
-recommended_indices = sorted_indices[1:num_recommendations + 1]
-
-# Combine similarity scores and aggregated ratings for ranking
-combined_scores = [(similarity_scores[i], games_data[recommended_indices[i]]['aggregated_rating']) for i in range(num_recommendations)]
-
-# Sort recommended games by combined score (similarity + aggregated_rating)
-combined_scores.sort(key=lambda x: (x[0], x[1]), reverse=True)
-sorted_indices = [recommended_indices[i] for i, _ in combined_scores]
-
-# Display recommended games and their combined scores
-print(f"Recommended games for {target_game_index} {games_data[target_game_index]['name']} using Word Embeddings and Aggregated Rating:")
-
-for i, game_index in enumerate(sorted_indices):
-    game = games_data[game_index]
-    similarity_score, aggregated_rating = combined_scores[i]
-    print(f"Game {i + 1}: id={game['id']}, title='{game['name']}', Similarity Score={similarity_score:.4f}, Aggregated Rating={aggregated_rating:.4f}")
+recommendations = get_recommendations('street fighter', num_recommend=10)
+print(recommendations)
