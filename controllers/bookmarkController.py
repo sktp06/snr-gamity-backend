@@ -1,10 +1,14 @@
 import json
 import math
 import pickle
+import re
 
 import numpy as np
+import pandas as pd
 from flask import jsonify, request
 from gensim.models import Word2Vec
+from sklearn.decomposition import TruncatedSVD
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from models.bookmark import Bookmark
@@ -69,49 +73,34 @@ class BookmarkController:
     def recommendGames():
         try:
             userId = request.json['userId']
-            user_bookmarks = Bookmark.query.filter_by(user_id=userId).all()
-            if not user_bookmarks:
+            print(1)
+            bookmarks = Bookmark.query.filter_by(user_id=userId).all()
+            print(2)
+
+            if not bookmarks:
                 return jsonify({'message': 'No bookmarks found for this user'}), 404
+            print(3)
 
-            parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
+            # Load the pre-trained recommender model
+            with open('assets/recommend_model.pkl', 'rb') as model_file:
+                recommender_model = pickle.load(model_file)
+            print(4)
 
-            # Load or train Word2Vec model on game descriptions
-            descriptions = parsed_data['unclean_summary'].tolist()
-            model = Word2Vec(sentences=descriptions, vector_size=100, window=5, min_count=1, sg=0)
-
-            # Extract genres for user's bookmarked games
-            user_genres = set()
-            for b in user_bookmarks:
-                temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
-                user_genres.update(temp['genres'])
-
-            # Find games with similar genres and high aggregated_rating to recommend
             recommended_games = []
-            for idx, game in parsed_data.iterrows():
-                if len(recommended_games) >= 10:
-                    break
 
-                if game['id'] not in [b.game_id for b in user_bookmarks]:
-                    common_genres = user_genres.intersection(game['genres'])
-                    if common_genres and not math.isnan(game['aggregated_rating']):
-                        # Calculate similarity score based on word embeddings
-                        similarity_score = model.wv.n_similarity(descriptions, game['unclean_summary'].split())
-
-                        recommended_games.append({
-                            'id': game['id'],
-                            'name': game['name'],
-                            'cover': game['cover'],
-                            'genres': game['genres'],
-                            'aggregated_rating': game['aggregated_rating'],
-                            'rating': game['rating'] if not math.isnan(game['rating']) else 0,
-                            'common_genres': list(common_genres),
-                            'word_similarity_score': similarity_score
-                        })
-
-            recommended_games.sort(key=lambda x: (x['aggregated_rating'], x['rating'], x['word_similarity_score']),
-                                   reverse=True)
-            recommended_games = recommended_games[:20]  # Keep only the top 20 recommendations
+            for bookmark in bookmarks:
+                game_id = bookmark.game_id
+                print(5)
+                print(game_id)
+                print(recommender_model)
+                # Get recommendations from the pre-trained model using the game_id
+                if game_id in recommender_model:
+                    recommended_for_game = recommender_model[game_id]
+                    recommended_games.extend(recommended_for_game)
 
             return jsonify({'recommended_games': recommended_games}), 200
-        except:
-            return jsonify({'message': 'Failed to recommend games'}), 400
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
+

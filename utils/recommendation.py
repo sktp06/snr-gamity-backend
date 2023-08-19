@@ -2,14 +2,21 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+import pickle
 
 # Load your data
-df = pd.read_csv('assets/parsed_data.csv')
+df = pd.read_csv('../assets/parsed_data.csv')
 df['summary'] = df['summary'].fillna('')
+df['name'] = df['name'].drop_duplicates()
 
 # Create a TfidfVectorizer and fit_transform your data
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(df['summary'])
+
+# Save cleaned data to pickle file
+with open('../assets/recommend_model.pkl', 'wb') as file:
+    pickle.dump(tfidf_matrix, file)
+
 
 # Batch size for processing
 batch_size = 1000
@@ -28,20 +35,24 @@ for i in range(0, num_docs, batch_size):
 print("Cosine similarity matrix computed successfully.")
 
 # Create a Series with movie indices
-indices = pd.Series(df.index, index=df['name']).drop_duplicates()
+indices = pd.Series(df.index, index=df['id']).drop_duplicates()
 
-def get_recommendations(name, cosine_sim=cosine_sim, num_recommend=10):
-    idx = indices[name]
-    # Get the pairwsie similarity scores of all movies with that movie
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    # Sort the movies based on the similarity scores
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    # Get the scores of the 10 most similar movies
-    top_similar = sim_scores[1:num_recommend + 1]
-    # Get the movie indices
-    movie_indices = [i[0] for i in top_similar]
-    # Return the top 10 most similar movies
-    return df['name'].iloc[movie_indices]
 
-recommendations = get_recommendations('street fighter', num_recommend=10)
-print(recommendations)
+def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=10):
+    try:
+        idx = indices[id]
+        # Get the pairwsie similarity scores of all movies with that movie
+        sim_scores = list(enumerate(cosine_sim[idx]))
+        # Sort the movies based on the similarity scores
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        # Get the scores of the 10 most similar movies
+        top_similar = sim_scores[1:num_recommend + 1]
+        # Get the movie indices
+        movie_indices = [i[0] for i in top_similar]
+        # Return the top 10 most similar movies
+        return df['name'].iloc[movie_indices]
+    except Exception as e:
+        return (f"An exception occurred: {str(e)}")
+
+
+# print(get_recommendations(37258, num_recommend=10))

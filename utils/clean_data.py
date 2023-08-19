@@ -43,8 +43,8 @@ class CleanData:
         # with open('../assets/parsed_data.pkl', 'wb') as file:
         #     pickle.dump(df, file)
 
-        json_filename = '../assets/parsed_data.json'
-        df.to_json(json_filename, orient='records')
+        csv_filename = '../assets/parsed_data.csv'
+        df.to_csv(csv_filename, index=False)
 
         return df
 
