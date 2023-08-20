@@ -1,18 +1,10 @@
-import json
-import logging
 import math
 import os
 from datetime import datetime
-
-import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from gensim.models import Word2Vec
 from passlib.handlers.bcrypt import bcrypt
-from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from spellchecker import SpellChecker
 from sqlalchemy_utils.functions import database_exists, create_database
 
@@ -190,6 +182,8 @@ def register():
 
 @app.route('/bookmarks/recommend', methods=['POST'])
 def recommendGames():
+    df = pd.read_csv('assets/parsed_data.csv')
+    df['summary'] = df['summary'].fillna('')
     try:
         userId = request.json['userId']
         bookmarks = Bookmark.query.filter_by(user_id=userId).all()
@@ -198,24 +192,39 @@ def recommendGames():
             return jsonify({'message': 'No bookmarks found for this user'}), 404
 
         # Load the pre-trained recommender model
-        with open('assets/recommend_model.pkl', 'rb') as model_file:
-            recommender_model = pickle.load(model_file)
-
+        cosine_sim = pickle.load(
+            open('assets/cosine_sim.pkl', 'rb'))
+        indices = pd.Series(df.index, index=df['id']).drop_duplicates()
         recommended_games = []
 
         for bookmark in bookmarks:
             game_id = bookmark.game_id
+            try:
+                idx = indices[game_id]
+                # Get the pairwsie similarity scores of all movies with that movie
+                sim_scores = list(enumerate(cosine_sim[idx]))
+                # Sort the movies based on the similarity scores
+                sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+                # Get the scores of the 10 most similar movies
+                top_similar = sim_scores[1:10 + 1]
+                # Get the movie indices
+                movie_indices = [i[0] for i in top_similar]
+                # Return the top 10 most similar movies
+                recommended_for_game = df.iloc[movie_indices].to_dict('records')
+            except Exception as e:
+                return f"An exception occurred: {str(e)}"
 
-            # Get recommendations from the pre-trained model using the game_id
-            if game_id in recommender_model:
-                recommended_for_game = recommender_model[game_id]
-                recommended_games.extend(recommended_for_game)
+            recommended_games.append({
+                "game_id": game_id,
+                "recommended": recommended_for_game})
+        print(recommended_games)
 
         return jsonify({'recommended_games': recommended_games}), 200
 
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=False)

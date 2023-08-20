@@ -5,18 +5,13 @@ from sklearn.metrics.pairwise import linear_kernel
 import pickle
 
 # Load your data
-df = pd.read_csv('../assets/parsed_data.csv')
+df = pd.read_csv('assets/parsed_data.csv')
 df['summary'] = df['summary'].fillna('')
 df['name'] = df['name'].drop_duplicates()
 
 # Create a TfidfVectorizer and fit_transform your data
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(df['summary'])
-
-# Save cleaned data to pickle file
-with open('../assets/recommend_model.pkl', 'wb') as file:
-    pickle.dump(tfidf_matrix, file)
-
 
 # Batch size for processing
 batch_size = 1000
@@ -37,7 +32,8 @@ print("Cosine similarity matrix computed successfully.")
 # Create a Series with movie indices
 indices = pd.Series(df.index, index=df['id']).drop_duplicates()
 
-
+with open('assets/cosine_sim.pkl', 'wb') as file:
+    pickle.dump(cosine_sim, file)
 def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=10):
     try:
         idx = indices[id]
