@@ -10,9 +10,11 @@ df = pd.read_csv('assets/parsed_data.csv')
 df['summary'] = df['summary'].fillna('')
 df = df.drop_duplicates(subset='id')
 df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
-input_df = df['summary']
+# input_df = df['summary']
 ps = PorterStemmer()
-input_df = input_df.apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+# input_df = input_df.apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+
 
 # Create a TfidfVectorizer and fit_transform your data
 tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
@@ -41,7 +43,7 @@ with open('../assets/cosine_sim.pkl', 'wb') as file:
     pickle.dump(cosine_sim, file)
 
 
-def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=10, max_overlap_threshold=0.5):
+def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=10):
     try:
         idx = indices[id]
         # Get the pairwsie similarity scores of all games with that game
@@ -51,7 +53,7 @@ def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=10, max_overlap
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
 
         # Get the scores of the most similar games
-        top_similar = [x for x in sim_scores if x[1] > max_overlap_threshold ]
+        top_similar = [x for x in sim_scores if x[1] ]
 
         # Get the maximum similarity score
         max_score = max(top_similar, key=lambda x: x[1])[1]
