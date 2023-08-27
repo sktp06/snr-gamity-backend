@@ -62,8 +62,6 @@ class BookmarkController:
 
     @staticmethod
     def recommendGames():
-        df = pd.read_csv('assets/parsed_data.csv')
-        df['summary'] = df['summary'].fillna('')
         try:
             userId = request.json['userId']
             bookmarks = Bookmark.query.filter_by(user_id=userId).all()
@@ -71,35 +69,28 @@ class BookmarkController:
             if not bookmarks:
                 return jsonify({'message': 'No bookmarks found for this user'}), 404
 
-            # Load the pre-trained recommender model
-            cosine_sim = pickle.load(
-                open('assets/cosine_sim.pkl', 'rb'))
-            indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+            # Load the pre-computed recommendations
+            with open('assets/all_recommendations.pkl', 'rb') as file:
+                all_recommendations = pickle.load(file)
+
             recommended_games = []
 
             for bookmark in bookmarks:
                 game_id = bookmark.game_id
                 try:
-                    idx = indices[game_id]
-                    # Get the pairwsie similarity scores of all movies with that movie
-                    sim_scores = list(enumerate(cosine_sim[idx]))
-                    # Sort the movies based on the similarity scores
-                    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-                    # Get the scores of the 10 most similar movies
-                    top_similar = sim_scores[1:10 + 1]
-                    # Get the movie indices
-                    movie_indices = [i[0] for i in top_similar]
-                    # Return the top 10 most similar movies
-                    recommended_for_game = df.iloc[movie_indices].to_dict('records')
+                    recommended_for_game = all_recommendations.get(str(game_id), [])
+                    recommended_for_game.sort(key=lambda x: float(x['score']), reverse=True)
+                    top_recommended = recommended_for_game[:10]
                 except Exception as e:
                     return f"An exception occurred: {str(e)}"
 
-                recommended_games.append({
-                    "game_id": game_id,
-                    "recommended": recommended_for_game})
-            # print(recommended_games)
+                recommended_games.extend(top_recommended)
 
-            return jsonify({'recommended_games': recommended_games}), 200
+            # Sort all recommended games across bookmarks by score
+            recommended_games.sort(key=lambda x: float(x['score']), reverse=True)
+            top_recommended_across_bookmarks = recommended_games[:10]
+
+            return jsonify({'recommended_games': top_recommended_across_bookmarks}), 200
 
         except Exception as e:
             print(f"Error: {e}")
