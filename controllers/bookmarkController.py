@@ -77,22 +77,48 @@ class BookmarkController:
 
             for bookmark in bookmarks:
                 game_id = bookmark.game_id
-                try:
-                    recommended_for_game = all_recommendations.get(str(game_id), [])
-                    recommended_for_game.sort(key=lambda x: float(x['score']), reverse=True)
-                    top_recommended = recommended_for_game[:10]
-                except Exception as e:
-                    return f"An exception occurred: {str(e)}"
-
-                recommended_games.extend(top_recommended)
+                recommended_for_game = all_recommendations.get(str(game_id), [])
+                recommended_games.extend(recommended_for_game)
 
             # Sort all recommended games across bookmarks by score
             recommended_games.sort(key=lambda x: float(x['score']), reverse=True)
             top_recommended_across_bookmarks = recommended_games[:10]
 
-            return jsonify({'recommended_games': top_recommended_across_bookmarks}), 200
+            # Load the parsed data as a dictionary
+            # with open('assets/parsed_data.pkl', 'rb') as file:
+            #     parsed_data = pickle.load(file).to_dict()
+            #     print(parsed_data.get('id'))
+            parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
 
+            matching_games = []
+
+            for recommended_game in top_recommended_across_bookmarks:
+                filtered_data = parsed_data[parsed_data['id'] == recommended_game['id']]
+                print(recommended_game['id'])
+                print(filtered_data)
+                if not filtered_data.empty:
+                    temp = filtered_data.to_dict('records')[0]
+                    matching_games.append({
+                              'id': recommended_game['id'],
+                              'score': recommended_game['score'],
+                              'name': temp['name'],
+                              'cover': temp['cover'],
+                              'release_dates': temp['release_dates'],
+                              'unclean_summary': temp['unclean_summary'],
+                              'genres': temp['genres'],
+                              'main_story': temp['main_story'],
+                              'main_extra': temp['main_extra'],
+                              'completionist': temp['completionist'],
+                              'websites': temp['websites'],
+                              'aggregated_rating': temp['aggregated_rating'] if not math.isnan(
+                                  temp['aggregated_rating']) else 0,
+                              'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
+                              })
+            return jsonify({'recommended_games': matching_games}), 200
         except Exception as e:
             print(f"Error: {e}")
             return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
+
+
+
 
