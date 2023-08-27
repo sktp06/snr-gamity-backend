@@ -45,6 +45,19 @@ class GameController:
 
         return jsonify({'content': game_information}), 200
 
+    @staticmethod
+    def get_clean_gameplay():
+        with open('clean_gameplay.pkl', 'rb') as file:
+            games = pickle.load(file)
+
+        # Convert the list of dictionaries to a DataFrame
+        df = pd.DataFrame(games)
+
+        # Convert the DataFrame to a dictionary with 'records' orientation
+        game_dict = df.to_dict('records')
+
+        return jsonify({'content': game_dict}), 200
+
     # @staticmethod
     # def query_name():
     #     query = request.args.get('query')
