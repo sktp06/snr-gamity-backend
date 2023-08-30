@@ -174,12 +174,30 @@ def register():
 # @app.route('/game/search', methods=['POST'])
 # def search():
 #     query = request.args.get('query')
-#     spell_corr = [spell_checker.correction(w) for w in query.split()]
-#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-#     results = parsed_data[
-#         parsed_data['name'].str.contains(query, case=False) | parsed_data['summary'].str.contains(query, case=False)]
 #
-#     return results.to_json(orient='records')
+#     # Apply spell correction to each word in the query
+#     corrected_query_words = [spell_checker.correction(word) for word in query.split()]
+#     corrected_query = ' '.join(corrected_query_words)
+#
+#     # Load the clean_gameplay data
+#     with open('clean_gameplay.pkl', 'rb') as file:
+#         clean_gameplay_data = pickle.load(file)
+#
+#     # Convert the data to a DataFrame
+#     df = pd.DataFrame(clean_gameplay_data)
+#
+#     # Search in both 'name' and 'summary' columns
+#     results = df[df['name'].str.contains(corrected_query, case=False) |
+#                  df['summary'].str.contains(corrected_query, case=False)]
+#
+#     # Convert the DataFrame to a dictionary with 'records' orientation
+#     results_dict = results.to_dict('records')
+#
+#     return jsonify({
+#         'query': query,
+#         'corrected_query': corrected_query,
+#         'results': results_dict
+#     }), 200
 
 
 # @app.route('/correction', methods=['GET'])
@@ -248,6 +266,26 @@ def recommendGames():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
+
+
+@app.route('/game/search', methods=['POST'])
+def search():
+    query = request.json['query']
+    spell_corr = [spell_checker.correction(w) for w in query.split()]
+
+    with open('assets/clean_gameplay.pkl', 'rb') as file:
+        parsed_data = pickle.load(file)
+
+    results = parsed_data[
+        parsed_data['name'].str.contains(query, case=False) |
+        parsed_data['summary'].str.contains(query, case=False)
+        ]
+
+    return jsonify({
+        'query': query,
+        'spell_corr': spell_corr,
+        'results_name': results.to_dict('records')
+    }), 200
 
 
 if __name__ == '__main__':
