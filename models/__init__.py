@@ -19,7 +19,8 @@ def create_user(*args, **kwargs):
 @event.listens_for(Bookmark.__table__, 'after_create')
 def create_bookmark(*args, **kwargs):
     db.session.add(Bookmark(user_id=2, game_id=8533))
-    # db.session.add(Bookmark(user_id=2, game_id=11194))
+    db.session.add(Bookmark(user_id=2, game_id=228855))
+    db.session.add(Bookmark(user_id=2, game_id=121517))
     db.session.add(Bookmark(user_id=3, game_id=115286))
     db.session.add(Bookmark(user_id=3, game_id=194662))
     db.session.add(Bookmark(user_id=4, game_id=132769))

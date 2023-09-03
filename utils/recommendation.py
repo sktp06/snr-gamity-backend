@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -18,7 +19,7 @@ ps = PorterStemmer()
 df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
 
 # Create a TfidfVectorizer and fit_transform your data
-tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
+tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
 tfidf_matrix = tfidf.fit_transform(df['summary'])
 
 # Batch size for processing
@@ -53,37 +54,63 @@ id_to_idx_mapping = {game_id: idx for game_id, idx in zip(df['id'], df.index)}
 
 def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=11):
     try:
-        original_id = id  # Store the original ID before conversion
+        original_id = id
         idx = indices[id]
 
-        # Get the pairwsie similarity scores of all games with that game
+        # Get the pairwise similarity scores of all games with that game
         sim_scores = list(enumerate(cosine_sim[idx]))
 
         # Sort the games based on the similarity scores
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
 
-        # Get the maximum similarity score
-        max_score = sim_scores[0][1]
-
         recommendations = []
         for idx, score in sim_scores[:num_recommend]:
-            normalized_score = score / max_score
-            formatted_score = format(normalized_score, '.4f')  # Format the score to 4 decimal places
+            normalized_score = score / sim_scores[0][1]  # Normalize by dividing by the max similarity score
+            # formatted_score = format(normalized_score, '.4f')
+            print(normalized_score)
 
             # Skip recommendations with a score of 1.0000
-            if formatted_score == "1.0000":
+            if normalized_score == "1.0000":
                 continue
 
-            # Use the mapping to get the original ID
             recommended_id = int(df['id'].iloc[idx])
             recommended_name = df['name'].iloc[idx]
+            popularity_score = df['popularity'].iloc[idx]
+            release_date_str = df['release_dates'].iloc[idx]
+
+            # Skip recommendations with invalid release date strings
+            if not isinstance(release_date_str, str):
+                continue
+
+            release_date = datetime.strptime(release_date_str, '%Y-%m-%d')
+
+            score_weight = 0.4
+            popularity_weight = 0.3
+            release_date_weight = 0.3
+
+            # Calculate a release_date_score that increases with newer dates
+            days_since_release = (datetime.now() - release_date).days
+            release_date_score = 1 / (days_since_release / 365 + 1)
+
+            normalized_popularity_score = popularity_score / 100
+
+            # Combine the release_date_score, popularity_score, and a constant score_weight
+            composite_score = (
+                        release_date_score * release_date_weight + normalized_popularity_score * popularity_weight + normalized_score * score_weight)
 
             recommendation = {
-                "score": formatted_score,
+                "composite_score": composite_score,
+                "score": normalized_score,
+                "popularity_score": normalized_popularity_score,
+                "release_date_score": release_date_score,
                 "id": recommended_id,
-                "name": recommended_name
+                "name": recommended_name,
+                "released_date": release_date_str
             }
             recommendations.append(recommendation)
+
+        # Sort recommendations based on the release_date_score in descending order
+        recommendations = sorted(recommendations, key=lambda x: x["composite_score"], reverse=True)
 
         # Organize recommendations by game ID
         output = {
@@ -99,7 +126,7 @@ def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=11):
 
 
 # Example usage
-get_recommendations(8533, num_recommend=11)
+get_recommendations(228855, num_recommend=16)
 
 
 def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
@@ -108,7 +135,7 @@ def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
     total_games = len(df['id'])
     for idx, loop_game_id in enumerate(df['id']):  # Use a different variable name
         try:
-            print(f"Generating recommendations for game {loop_game_id} ({idx+1}/{total_games})")
+            print(f"Generating recommendations for game {loop_game_id} ({idx + 1}/{total_games})")
             game_idx = id_to_idx_mapping[loop_game_id]  # Get the corresponding index from the mapping
             sim_scores = list(enumerate(cosine_sim[game_idx]))
             sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
@@ -123,11 +150,39 @@ def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
                 if formatted_score == "1.0000":
                     continue
 
+                recommended_id = int(df['id'].iloc[inner_idx])  # Use inner_idx to get the correct ID
+                popularity_score = df['popularity'].iloc[inner_idx]  # Use inner_idx to get the correct popularity
+                release_date_str = df['release_dates'].iloc[inner_idx]  # Use inner_idx to get the correct release date
+
+                # Skip recommendations with invalid release date strings
+                if not isinstance(release_date_str, str):
+                    continue
+
+                release_date = datetime.strptime(release_date_str, '%Y-%m-%d')
+
+                score_weight = 0.1
+                popularity_weight = 0
+                release_date_weight = 0.9
+
+                # Calculate a release_date_score that increases with newer dates
+                days_since_release = (datetime.now() - release_date).days
+                release_date_score = 1 / (days_since_release / 365 + 1)
+
+                normalized_popularity_score = popularity_score / 100
+                normalized_score = score / 100
+
+                # Combine the release_date_score, popularity_score, and a constant score_weight
+                composite_score = (
+                        release_date_score * release_date_weight + normalized_popularity_score * popularity_weight + normalized_score * score_weight)
+
                 recommendation = {
-                    "score": formatted_score,
-                    "id": int(df['id'].iloc[inner_idx]),  # Convert to int
+                    "composite_score": composite_score,
+                    "id": recommended_id,  # Convert to int
                 }
                 recommendations.append(recommendation)
+
+            # Sort recommendations based on the release_date_score in descending order
+            recommendations = sorted(recommendations, key=lambda x: x["composite_score"], reverse=True)
 
             all_recommendations[str(loop_game_id)] = recommendations
 
@@ -135,15 +190,30 @@ def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
             print(f"An exception occurred for game {loop_game_id}: {str(e)}")
 
     # Write all recommendations to a JSON file
-    # with open("all_recommendations.json", "w") as json_file:
+    # with open("all_recommendations109.json", "w") as json_file:
     #     json.dump(all_recommendations, json_file, indent=4)
 
     # Write all recommendations to a pickle file
-    with open("all_recommendations.pkl", "wb") as pickle_file:
+    with open("all_recommendations109.pkl", "wb") as pickle_file:
         pickle.dump(all_recommendations, pickle_file)
+
 
 # Call the function to generate recommendations for all games
 get_all_recommendations(num_recommend=11)
 
+def calculate_release_date_score(release_date):
+    # Convert the release date string to a datetime object
+    release_date_obj = datetime.strptime(release_date, '%Y-%m-%d')
 
+    # Calculate the number of days since release
+    days_since_release = (datetime.now() - release_date_obj).days
+
+    # Calculate the release date score
+    release_date_score = 1 / (days_since_release / 365 + 1)
+
+    return release_date_score
+
+release_date = "1000-03-05"
+score = calculate_release_date_score(release_date)
+print(f"Release Date Score: {score}")
 
