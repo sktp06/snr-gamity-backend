@@ -70,7 +70,7 @@ class BookmarkController:
                 return jsonify({'message': 'No bookmarks found for this user'}), 404
 
             # Load the pre-computed recommendations
-            with open('all_recommendations109.pkl', 'rb') as file:
+            with open('assets/all_recommendations055.pkl', 'rb') as file:
                 all_recommendations = pickle.load(file)
 
             recommended_games = []
@@ -82,7 +82,7 @@ class BookmarkController:
 
             # # Sort all recommended games across bookmarks by score
             recommended_games.sort(key=lambda x: float(x['composite_score']), reverse=True)
-            top_recommended_across_bookmarks = recommended_games[:20]
+            top_recommended_across_bookmarks = recommended_games[:10]
 
             # Load the parsed data as a dictionary
             # with open('assets/parsed_data.pkl', 'rb') as file:
