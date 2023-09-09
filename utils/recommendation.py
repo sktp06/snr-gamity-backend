@@ -137,7 +137,7 @@ def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=11):
 
 
 # Example usage
-get_recommendations(1439, num_recommend=101)
+get_recommendations(159449, num_recommend=101)
 
 
 def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):

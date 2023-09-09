@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-
+from flask_caching import Cache
 import pandas as pd
 from flask import jsonify, request
 import pickle
@@ -8,9 +8,11 @@ from spellchecker import SpellChecker
 
 spell_checker = SpellChecker(language='en')
 
+cache = Cache()
 
 class GameController:
     @staticmethod
+    @cache.cached(timeout=3600)  # Cache data for 1 hour (adjust as needed)
     def get_games():
         with open('parsed_data.pkl', 'rb') as file:
             games = pickle.load(file)
@@ -22,7 +24,7 @@ class GameController:
         game_dict = df.to_dict('records')
 
         return jsonify({'content': game_dict}), 200
-
+    
     @staticmethod
     def get_game_statistics():
         parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))

@@ -45,7 +45,7 @@ class CleanData:
         # with open('../assets/parsed_data.pkl', 'wb') as file:
         #     pickle.dump(df, file)
 
-        csv_filename = '../assets/parsed_data.csv'
+        # csv_filename = '../assets/parsed_data.csv'
         df.to_csv(csv_filename, index=False)
 
         return df
@@ -69,13 +69,17 @@ class CleanData:
         df = df[(df['main_story'] > 0) | (df['main_extra'] > 0) | (df['completionist'] > 0)]
 
         # Save the cleaned gameplay data to pickle file
-        with open('../assets/clean_gameplay.pkl', 'wb') as file:
-            pickle.dump(df, file)
+        # with open('../assets/clean_gameplay.pkl', 'wb') as file:
+        #     pickle.dump(df, file)
+
+        # Save the cleaned gameplay data to a JSON file
+        with open('../assets/clean_gameplay.json', 'w') as file:
+            df.to_json(file, orient='records')
 
         return df
 
 
 cleaner = CleanData()  # Create an instance of the CleanData class
-df = cleaner.get_data("../assets/games.json")  # Call the get_data method on the instance
+df = cleaner.get_data("assets/games.json")  # Call the get_data method on the instance
 cleaned_df = cleaner.clean_data_gameplay()  # Call the clean_data_gameplay method on the instance
 print(cleaned_df)  # Display the cleaned DataFrame if needed
