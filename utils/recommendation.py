@@ -7,49 +7,85 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import pickle
 from nltk.stem import PorterStemmer
-
-# Load your data
-df = pd.read_csv('assets/parsed_data.csv')
-df['summary'] = df['summary'].fillna('')
-df = df.drop_duplicates(subset='id')
-df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
-# input_df = df['summary']
-ps = PorterStemmer()
-# input_df = input_df.apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
-df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
-
-# Create a TfidfVectorizer and fit_transform your data
-tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
-tfidf_matrix = tfidf.fit_transform(df['summary'])
-
-# Batch size for processing
-batch_size = 1000
-
-# Compute cosine similarity in batches
-num_docs = tfidf_matrix.shape[0]
-cosine_sim = np.zeros((num_docs, num_docs), dtype='uint8')
-
-for i in range(0, num_docs, batch_size):
-    start = i
-    end = min(i + batch_size, num_docs)
-    batch_cosine_sim = linear_kernel(tfidf_matrix[start:end, :], tfidf_matrix)
-    batch_cosine_sim_uint8 = (batch_cosine_sim * 255).astype('uint8')
-    cosine_sim[start:end, :] = batch_cosine_sim_uint8
-
-print("Cosine similarity matrix computed successfully.")
-
-# Create a Series with game indices
+#
+# # Load your data
+# df = pd.read_csv('assets/parsed_data.csv')
+# df['summary'] = df['summary'].fillna('')
+# df = df.drop_duplicates(subset='id')
+# df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
+# # input_df = df['summary']
+# ps = PorterStemmer()
+# # input_df = input_df.apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+# df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+#
+# # Create a TfidfVectorizer and fit_transform your data
+# tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
+# tfidf_matrix = tfidf.fit_transform(df['summary'])
+#
+# # Batch size for processing
+# batch_size = 1000
+#
+# # Compute cosine similarity in batches
+# num_docs = tfidf_matrix.shape[0]
+# cosine_sim = np.zeros((num_docs, num_docs), dtype='uint8')
+#
+# for i in range(0, num_docs, batch_size):
+#     start = i
+#     end = min(i + batch_size, num_docs)
+#     batch_cosine_sim = linear_kernel(tfidf_matrix[start:end, :], tfidf_matrix)
+#     batch_cosine_sim_uint8 = (batch_cosine_sim * 255).astype('uint8')
+#     cosine_sim[start:end, :] = batch_cosine_sim_uint8
+#
+# print("Cosine similarity matrix computed successfully.")
+#
+# # Create a Series with game indices
+# # indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+#
+#
+# # with open('assets/cosine_sim.pkl', 'wb') as file:
+# #     pickle.dump(cosine_sim, file)
+#
+# # Create a Series with game indices
 # indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+#
+# # Store a mapping between original IDs and indices
+# id_to_idx_mapping = {game_id: idx for game_id, idx in zip(df['id'], df.index)}
+#
+
+def preprocess_data():
+    # Load your data
+    df = pd.read_csv('../assets/parsed_data.csv')
+    df['summary'] = df['summary'].fillna('')
+    df = df.drop_duplicates(subset='id')
+    df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
+
+    ps = PorterStemmer()
+    df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
+
+    return df
 
 
-# with open('assets/cosine_sim.pkl', 'wb') as file:
-#     pickle.dump(cosine_sim, file)
+def compute_cosine_similarity(df):
+    # Create a TfidfVectorizer and fit_transform your data
+    tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
+    tfidf_matrix = tfidf.fit_transform(df['summary'])
 
-# Create a Series with game indices
-indices = pd.Series(df.index, index=df['id']).drop_duplicates()
+    # Batch size for processing
+    batch_size = 1000
 
-# Store a mapping between original IDs and indices
-id_to_idx_mapping = {game_id: idx for game_id, idx in zip(df['id'], df.index)}
+    # Compute cosine similarity in batches
+    num_docs = tfidf_matrix.shape[0]
+    cosine_sim = np.zeros((num_docs, num_docs), dtype='uint8')
+
+    for i in range(0, num_docs, batch_size):
+        start = i
+        end = min(i + batch_size, num_docs)
+        batch_cosine_sim = linear_kernel(tfidf_matrix[start:end, :], tfidf_matrix)
+        batch_cosine_sim_uint8 = (batch_cosine_sim * 255).astype('uint8')
+        cosine_sim[start:end, :] = batch_cosine_sim_uint8
+
+    print("Cosine similarity matrix computed successfully.")
+    return cosine_sim
 
 
 def calculate_release_date_score(release_date):
@@ -69,10 +105,10 @@ def calculate_release_date_score(release_date):
     # example current-year release2016 = 7*0.1 = 0.7 1-0.7 =0.3
 
 
-def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=11):
+def get_recommendations(id, cosine_sim, df, num_recommend=11):
     try:
         original_id = id
-        idx = indices[id]
+        idx = df[df['id'] == id].index[0]
 
         # Get the pairwise similarity scores of all games with that game
         sim_scores = list(enumerate(cosine_sim[idx]))
@@ -136,18 +172,14 @@ def get_recommendations(id, cosine_sim=cosine_sim, num_recommend=11):
         return f"An exception occurred: {str(e)}"
 
 
-# Example usage
-get_recommendations(159449, num_recommend=101)
-
-
-def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
+def get_all_recommendations(cosine_sim, df, num_recommend=11):
     all_recommendations = {}  # Dictionary to store recommendations for all games
 
     total_games = len(df['id'])
     for idx, loop_game_id in enumerate(df['id']):  # Use a different variable name
         try:
             print(f"Generating recommendations for game {loop_game_id} ({idx + 1}/{total_games})")
-            game_idx = id_to_idx_mapping[loop_game_id]  # Get the corresponding index from the mapping
+            game_idx = df[df['id'] == loop_game_id].index[0]  # Find the index using DataFrame
             sim_scores = list(enumerate(cosine_sim[game_idx]))
             sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
             max_score = sim_scores[0][1]
@@ -197,10 +229,18 @@ def get_all_recommendations(cosine_sim=cosine_sim, num_recommend=11):
     with open("all_recommendations055.json", "w") as json_file:
         json.dump(all_recommendations, json_file, indent=4)
 
-    # # Write all recommendations to a pickle file
-    # with open("all_recommendations055.pkl", "wb") as pickle_file:
-    #     pickle.dump(all_recommendations, pickle_file)
+    # Write all recommendations to a pickle file
+    with open("all_recommendations055.pkl", "wb") as pickle_file:
+        pickle.dump(all_recommendations, pickle_file)
 
 
-# Call the function to generate recommendations for all games
-get_all_recommendations(num_recommend=11)
+# Example usage
+if __name__ == "__main__":
+    df = preprocess_data()
+    cosine_sim = compute_cosine_similarity(df)
+
+    # Generate recommendations for a single game
+    get_recommendations(7331, cosine_sim, df, num_recommend=11)
+
+    # Generate recommendations for all games
+    # get_all_recommendations(cosine_sim, df, num_recommend=11)

@@ -89,6 +89,10 @@ class BookmarkController:
             for recommended_game in recommended_games:
                 game_id = recommended_game['id']
 
+                # Check if the game is already in the bookmarks
+                if any(bookmark.game_id == game_id for bookmark in bookmarks):
+                    continue  # Skip this game if it's in bookmarks
+
                 if game_id not in unique_games:
                     filtered_data = parsed_data[parsed_data['id'] == game_id]
 
