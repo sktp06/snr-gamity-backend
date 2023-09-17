@@ -20,14 +20,8 @@ class GameController:
         # Convert the list of dictionaries to a DataFrame
         df = pd.DataFrame(games)
 
-        # Sort by popularity score and rating score in descending order
-        sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
-
-        # Select the top 1000 games
-        top_games = sorted_games.head(1000)
-
         # Convert the DataFrame to a dictionary with 'records' orientation
-        game_dict = top_games.to_dict('records')
+        game_dict = df.to_dict('records')
 
         return jsonify({'content': game_dict}), 200
 

@@ -78,8 +78,24 @@ class CleanData:
 
         return df
 
+    def select_top_games(self):
+        # Load the cleaned data from parsed_data.pkl
+        with open('../assets/parsed_data.pkl', 'rb') as file:
+            df = pickle.load(file)
+
+        # Sort by popularity score and rating score in descending order
+        sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+
+        # Select the top 5000 games
+        top_games = sorted_games.head(5000)
+
+        # Save the top games to a new pickle file
+        with open('../assets/limit_games.pkl', 'wb') as file:
+            pickle.dump(top_games, file)
+
+        return top_games
 
 cleaner = CleanData()  # Create an instance of the CleanData class
-df = cleaner.get_data("assets/games.json")  # Call the get_data method on the instance
-cleaned_df = cleaner.clean_data_gameplay()  # Call the clean_data_gameplay method on the instance
-print(cleaned_df)  # Display the cleaned DataFrame if needed
+# df = cleaner.get_data("assets/games.json")
+# cleaned_df = cleaner.clean_data_gameplay()
+top_games_df = cleaner.select_top_games()
