@@ -41,9 +41,20 @@ app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 def get_games():
     with open('assets/parsed_data.pkl', 'rb') as file:
         games = pickle.load(file)
-    results = pd.DataFrame(games)
 
-    return results.to_json(orient='records')
+    # Convert the list of dictionaries to a DataFrame
+    df = pd.DataFrame(games)
+
+    # Sort by popularity score and rating score in descending order
+    sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+
+    # Select the top 1000 games
+    top_games = sorted_games.head(1000)
+
+    # Convert the DataFrame to a dictionary with 'records' orientation
+    game_dict = top_games.to_dict('records')
+
+    return jsonify({'content': game_dict}), 200
 
 
 @app.route('/game/stat', methods=['GET'])
@@ -72,6 +83,15 @@ def get_game_statistics():
 @app.route('/game/clean_data', methods=['GET'])
 def get_clean_gameplay():
     with open('assets/clean_gameplay.pkl', 'rb') as file:
+        games = pickle.load(file)
+    results = pd.DataFrame(games)
+
+    return results.to_json(orient='records')
+
+
+@app.route('/game/upcoming', methods=['GET'])
+def get_upcoming():
+    with open('assets/parsed_data.pkl', 'rb') as file:
         games = pickle.load(file)
     results = pd.DataFrame(games)
 
@@ -288,6 +308,7 @@ def search():
         'results_name': results.to_dict('records')
     }), 200
 
+
 @app.route('/game/insert_data', methods=['POST'])
 def insert_data():
     try:
@@ -326,6 +347,7 @@ def insert_data():
         return jsonify({'message': 'Data inserted successfully'}), 200
     except Exception as e:
         return jsonify({'message': 'Failed to insert data', 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=False)

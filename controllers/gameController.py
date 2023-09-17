@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from flask_caching import Cache
 import pandas as pd
 from flask import jsonify, request
 import pickle
@@ -11,23 +10,27 @@ from models.game import Game
 
 spell_checker = SpellChecker(language='en')
 
-cache = Cache()
 
 class GameController:
     @staticmethod
-    @cache.cached(timeout=3600)  # Cache data for 1 hour (adjust as needed)
     def get_games():
-        with open('parsed_data.pkl', 'rb') as file:
+        with open('assets/parsed_data.pkl', 'rb') as file:
             games = pickle.load(file)
 
         # Convert the list of dictionaries to a DataFrame
         df = pd.DataFrame(games)
 
+        # Sort by popularity score and rating score in descending order
+        sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+
+        # Select the top 1000 games
+        top_games = sorted_games.head(1000)
+
         # Convert the DataFrame to a dictionary with 'records' orientation
-        game_dict = df.to_dict('records')
+        game_dict = top_games.to_dict('records')
 
         return jsonify({'content': game_dict}), 200
-    
+
     @staticmethod
     def get_game_statistics():
         parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
@@ -62,6 +65,20 @@ class GameController:
         game_dict = df.to_dict('records')
 
         return jsonify({'content': game_dict}), 200
+
+    @staticmethod
+    def get_upcoming():
+        with open('assets/parsed_data.pkl', 'rb') as file:
+            games = pickle.load(file)
+
+        # Convert the list of dictionaries to a DataFrame
+        df = pd.DataFrame(games)
+
+        # Convert the DataFrame to a dictionary with 'records' orientation
+        game_dict = df.to_dict('records')
+
+        return jsonify({'content': game_dict}), 200
+
 
     # @staticmethod
     # def query_name():
