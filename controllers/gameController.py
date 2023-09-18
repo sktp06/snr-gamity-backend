@@ -20,16 +20,27 @@ class GameController:
         # Convert the list of dictionaries to a DataFrame
         df = pd.DataFrame(games)
 
-        # Sort by popularity score and rating score in descending order
-        sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+        # Create an empty dictionary to store the top games for each genre
+        top_games_by_genre = {}
 
-        # Select the top 1000 games
-        top_games = sorted_games.head(5000)
+        # Iterate over each genre
+        for genre in df['genres'].explode().unique():
+            # Filter the DataFrame for games with the current genre
+            genre_df = df[df['genres'].apply(lambda x: genre in x)]
 
-        # Convert the DataFrame to a dictionary with 'records' orientation
-        game_dict = top_games.to_dict('records')
+            # Sort by popularity score and rating score in descending order
+            sorted_games = genre_df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
 
-        return jsonify({'content': game_dict}), 200
+            # Select the top 100 games for the current genre
+            top_games = sorted_games.head(100)
+
+            # Convert the DataFrame to a dictionary with 'records' orientation
+            game_dict = top_games.to_dict('records')
+
+            # Add the top games for the current genre to the dictionary
+            top_games_by_genre[genre] = game_dict
+
+        return jsonify({'content': top_games_by_genre}), 200
 
     @staticmethod
     def get_game_statistics():

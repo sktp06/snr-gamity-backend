@@ -45,16 +45,32 @@ def get_games():
     # Convert the list of dictionaries to a DataFrame
     df = pd.DataFrame(games)
 
-    # Sort by popularity score and rating score in descending order
-    sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+    # Create an empty list to store the top games for each genre
+    top_games_by_genre = []
 
-    # Select the top 1000 games
-    top_games = sorted_games.head(5000)
+    # Iterate over each genre
+    for genre in df['genres'].explode().unique():
+        # Filter the DataFrame for games with the current genre
+        genre_df = df[df['genres'].apply(lambda x: genre in x)]
+
+        # Sort by popularity score and rating score in descending order
+        sorted_games = genre_df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+
+        # Select the top 100 games for the current genre
+        top_games = sorted_games.head(100)
+
+        # Append the top games for the current genre to the list
+        top_games_by_genre.append(top_games)
+
+    # Concatenate the list of DataFrames into a single DataFrame
+    result_df = pd.concat(top_games_by_genre)
 
     # Convert the DataFrame to a JSON string with 'records' orientation
-    json_result = top_games.to_json(orient='records')
+    json_result = result_df.to_json(orient='records')
 
     return json_result, 200
+
+
 
 
 
