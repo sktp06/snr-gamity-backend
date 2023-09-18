@@ -45,10 +45,17 @@ def get_games():
     # Convert the list of dictionaries to a DataFrame
     df = pd.DataFrame(games)
 
-    # Convert the DataFrame to a dictionary with 'records' orientation
-    game_dict = df.to_dict('records')
+    # Sort by popularity score and rating score in descending order
+    sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
 
-    return jsonify({'content': game_dict}), 200
+    # Select the top 1000 games
+    top_games = sorted_games.head(5000)
+
+    # Convert the DataFrame to a JSON string with 'records' orientation
+    json_result = top_games.to_json(orient='records')
+
+    return json_result, 200
+
 
 
 @app.route('/game/stat', methods=['GET'])
