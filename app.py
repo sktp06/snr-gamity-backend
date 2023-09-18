@@ -65,10 +65,14 @@ def get_games():
     # Concatenate the list of DataFrames into a single DataFrame
     result_df = pd.concat(top_games_by_genre)
 
+    # Drop duplicate games based on 'game_id'
+    result_df = result_df.drop_duplicates(subset='id')
+
     # Convert the DataFrame to a JSON string with 'records' orientation
     json_result = result_df.to_json(orient='records')
 
     return json_result, 200
+
 
 
 

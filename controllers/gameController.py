@@ -31,6 +31,9 @@ class GameController:
             # Sort by popularity score and rating score in descending order
             sorted_games = genre_df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
 
+            # Drop duplicate games within the genre based on some unique identifier, e.g., 'game_id'
+            sorted_games = sorted_games.drop_duplicates(subset='id')
+
             # Select the top 100 games for the current genre
             top_games = sorted_games.head(100)
 
