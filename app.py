@@ -39,7 +39,7 @@ app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 @app.route('/game/data', methods=['GET'])
 def get_games():
-    with open('assets/parsed_data.pkl', 'rb') as file:
+    with open('assets/limit_games.pkl', 'rb') as file:
         games = pickle.load(file)
 
     # Convert the list of dictionaries to a DataFrame
@@ -54,29 +54,21 @@ def get_games():
         genre_df = df[df['genres'].apply(lambda x: genre in x)]
 
         # Sort by popularity score and rating score in descending order
-        sorted_games = genre_df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
-
-        # Select the top 100 games for the current genre
-        top_games = sorted_games.head(100)
+        sorted_games = genre_df.sort_values(by=['popularity'], ascending=[False])
 
         # Append the top games for the current genre to the list
-        top_games_by_genre.append(top_games)
+        top_games_by_genre.append(sorted_games)
 
     # Concatenate the list of DataFrames into a single DataFrame
     result_df = pd.concat(top_games_by_genre)
 
-    # Drop duplicate games based on 'game_id'
+    # Drop duplicate games based on 'id'
     result_df = result_df.drop_duplicates(subset='id')
 
     # Convert the DataFrame to a JSON string with 'records' orientation
     json_result = result_df.to_json(orient='records')
 
     return json_result, 200
-
-
-
-
-
 
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
@@ -328,7 +320,6 @@ def search():
         'spell_corr': spell_corr,
         'results_name': results.to_dict('records')
     }), 200
-
 
 @app.route('/game/insert_data', methods=['POST'])
 def insert_data():

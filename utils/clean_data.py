@@ -42,8 +42,8 @@ class CleanData:
         df['popularity'] = df.apply(lambda row: self.calculate_popularity(row), axis=1)
 
         # Save cleaned data to pickle file
-        # with open('../assets/parsed_data.pkl', 'wb') as file:
-        #     pickle.dump(df, file)
+        with open('../assets/parsed_data.pkl', 'wb') as file:
+            pickle.dump(df, file)
 
         csv_filename = '../assets/parsed_data.csv'
         df.to_csv(csv_filename, index=False)
@@ -52,13 +52,47 @@ class CleanData:
 
     def calculate_popularity(self, row):
         rating = row['rating'] if 'rating' in row else 0
-        rating_count = row['rating_count'] if 'rating_count' in row else 0
         aggregated_rating = row['aggregated_rating'] if 'aggregated_rating' in row else 0
-        aggregated_rating_count = row['aggregated_rating_count'] if 'aggregated_rating_count' in row else 0
 
-        popularity = (rating * rating_count + aggregated_rating * aggregated_rating_count) / (
-                    rating_count + aggregated_rating_count) if (rating_count + aggregated_rating_count) > 0 else 0
+        release_date = row['release_dates']
+        release_date_score = self.calculate_release_date_score(release_date)
+
+        weight_rating = 0.3
+        weight_aggregated_rating = 0.3
+        weight_release_date = 0.4
+
+        # Calculate the popularity score as a weighted sum
+        popularity = rating/100 * weight_rating + release_date_score * weight_release_date + aggregated_rating/100 * weight_aggregated_rating
         return popularity
+
+    def calculate_release_date_score(self, release_date):
+        if release_date:
+            # Convert release date to a datetime object
+            release_date = pd.to_datetime(release_date, errors='coerce')
+            if not pd.isna(release_date):
+                # Calculate a score based on the difference between the release date and today
+                today = pd.Timestamp.today()
+                days_since_release = (today - release_date).days
+
+                # Define the number of years for full score (e.g., 5 years)
+                years_for_full_score = 5
+
+                if days_since_release <= (365 * years_for_full_score):
+                    # Give a full score of 1 to games released in the last 5 years
+                    release_date_score = 1.0
+                else:
+                    # Gradually decrease the score for older releases
+                    years_since_release = days_since_release / 365
+                    # Adjust the rate at which the score decreases as needed
+                    release_date_score = max(0, 1 - (years_since_release - years_for_full_score) / (
+                                years_for_full_score * 2))
+                    # In this example, the score decreases linearly over the next 5 years
+
+                    # Ensure the score is between 0 and 1
+                    release_date_score = min(1, release_date_score)
+
+                return release_date_score
+        return 0
 
     def clean_data_gameplay(self):
         # Load the cleaned data from parsed_data.pkl
@@ -84,7 +118,7 @@ class CleanData:
             df = pickle.load(file)
 
         # Sort by popularity score and rating score in descending order
-        sorted_games = df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+        sorted_games = df.sort_values(by=['popularity'], ascending=[False])
 
         # Select the top 5000 games
         top_games = sorted_games.head(5000)
@@ -95,7 +129,8 @@ class CleanData:
 
         return top_games
 
+
 cleaner = CleanData()  # Create an instance of the CleanData class
-# df = cleaner.get_data("assets/games.json")
+df = cleaner.get_data("../assets/games.json")
 # cleaned_df = cleaner.clean_data_gameplay()
 top_games_df = cleaner.select_top_games()

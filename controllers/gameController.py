@@ -13,8 +13,20 @@ spell_checker = SpellChecker(language='en')
 
 class GameController:
     @staticmethod
+    # def get_games():
+    #     with open('assets/limit_games.pkl', 'rb') as file:
+    #         games = pickle.load(file)
+    #
+    #     # Convert the list of dictionaries to a DataFrame
+    #     df = pd.DataFrame(games)
+    #
+    #     # Convert the DataFrame to a dictionary with 'records' orientation
+    #     game_dict = df.to_dict('records')
+    #
+    #     return jsonify({'content': game_dict}), 200
+
     def get_games():
-        with open('assets/parsed_data.pkl', 'rb') as file:
+        with open('assets/limit_games.pkl', 'rb') as file:
             games = pickle.load(file)
 
         # Convert the list of dictionaries to a DataFrame
@@ -29,18 +41,15 @@ class GameController:
             genre_df = df[df['genres'].apply(lambda x: genre in x)]
 
             # Sort by popularity score and rating score in descending order
-            sorted_games = genre_df.sort_values(by=['popularity', 'rating'], ascending=[False, False])
+            sorted_games = genre_df.sort_values(by=['popularity'], ascending=[False])
 
             # Drop duplicate games within the genre based on some unique identifier, e.g., 'game_id'
             sorted_games = sorted_games.drop_duplicates(subset='id')
 
-            # Select the top 100 games for the current genre
-            top_games = sorted_games.head(100)
-
             # Convert the DataFrame to a dictionary with 'records' orientation
-            game_dict = top_games.to_dict('records')
+            game_dict = sorted_games.to_dict('records')
 
-            # Add the top games for the current genre to the dictionary
+            # Add the games for the current genre to the dictionary
             top_games_by_genre[genre] = game_dict
 
         return jsonify({'content': top_games_by_genre}), 200
@@ -117,7 +126,7 @@ class GameController:
         query = request.json['query']
         spell_corr = [spell_checker.correction(w) for w in query.split()]
 
-        with open('../assets/clean_gameplay.pkl', 'rb') as file:
+        with open('../assets/parsed_data.pkl', 'rb') as file:
             parsed_data = pickle.load(file)
 
         results = parsed_data[
