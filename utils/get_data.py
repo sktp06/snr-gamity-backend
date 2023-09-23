@@ -6,7 +6,7 @@ from datetime import datetime
 class GameDataRetriever:
     def __init__(self):
         self.client_id = 'n0k0ipireherqqmh2fdrtxungi8p0w'
-        self.access_token = '6gsrp3s1hxk3vle27abza942jhf4t1'
+        self.access_token = '5o86xmzq07n3y18whonwpdd5oiefk0'
         self.url = 'https://api.igdb.com/v4/games/'
         self.params = {
             'fields': 'id,name,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.url,genres,'

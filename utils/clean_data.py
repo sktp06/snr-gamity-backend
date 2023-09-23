@@ -40,12 +40,19 @@ class CleanData:
 
         # Calculate popularity score
         df['popularity'] = df.apply(lambda row: self.calculate_popularity(row), axis=1)
+        df['popularity'].fillna(0.0, inplace=True)
+
+        df['rating'].fillna(0.0, inplace=True)
+        df['rating_count'].fillna(0.0, inplace=True)
+        df['aggregated_rating'].fillna(0.0, inplace=True)
+        df['aggregated_rating_count'].fillna(0.0, inplace=True)
+
 
         # Save cleaned data to pickle file
         with open('../assets/parsed_data.pkl', 'wb') as file:
             pickle.dump(df, file)
 
-        csv_filename = '../assets/parsed_data.csv'
+        csv_filename = 'parsed_data.csv'
         df.to_csv(csv_filename, index=False)
 
         return df
@@ -103,8 +110,8 @@ class CleanData:
         df = df[(df['main_story'] > 0) | (df['main_extra'] > 0) | (df['completionist'] > 0)]
 
         # Save the cleaned gameplay data to pickle file
-        # with open('../assets/clean_gameplay.pkl', 'wb') as file:
-        #     pickle.dump(df, file)
+        with open('../assets/clean_gameplay.pkl', 'wb') as file:
+            pickle.dump(df, file)
 
         # Save the cleaned gameplay data to a JSON file
         with open('../assets/clean_gameplay.json', 'w') as file:
@@ -132,5 +139,5 @@ class CleanData:
 
 cleaner = CleanData()  # Create an instance of the CleanData class
 df = cleaner.get_data("../assets/games.json")
-# cleaned_df = cleaner.clean_data_gameplay()
+cleaned_df = cleaner.clean_data_gameplay()
 top_games_df = cleaner.select_top_games()
