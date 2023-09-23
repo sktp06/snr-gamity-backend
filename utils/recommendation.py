@@ -7,50 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import pickle
 from nltk.stem import PorterStemmer
-#
-# # Load your data
-# df = pd.read_csv('assets/parsed_data.csv')
-# df['summary'] = df['summary'].fillna('')
-# df = df.drop_duplicates(subset='id')
-# df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
-# # input_df = df['summary']
-# ps = PorterStemmer()
-# # input_df = input_df.apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
-# df['summary'] = df['summary'].apply(lambda x: ' '.join([ps.stem(w) for w in x.split()]))
-#
-# # Create a TfidfVectorizer and fit_transform your data
-# tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 3))
-# tfidf_matrix = tfidf.fit_transform(df['summary'])
-#
-# # Batch size for processing
-# batch_size = 1000
-#
-# # Compute cosine similarity in batches
-# num_docs = tfidf_matrix.shape[0]
-# cosine_sim = np.zeros((num_docs, num_docs), dtype='uint8')
-#
-# for i in range(0, num_docs, batch_size):
-#     start = i
-#     end = min(i + batch_size, num_docs)
-#     batch_cosine_sim = linear_kernel(tfidf_matrix[start:end, :], tfidf_matrix)
-#     batch_cosine_sim_uint8 = (batch_cosine_sim * 255).astype('uint8')
-#     cosine_sim[start:end, :] = batch_cosine_sim_uint8
-#
-# print("Cosine similarity matrix computed successfully.")
-#
-# # Create a Series with game indices
-# # indices = pd.Series(df.index, index=df['id']).drop_duplicates()
-#
-#
-# # with open('assets/cosine_sim.pkl', 'wb') as file:
-# #     pickle.dump(cosine_sim, file)
-#
-# # Create a Series with game indices
-# indices = pd.Series(df.index, index=df['id']).drop_duplicates()
-#
-# # Store a mapping between original IDs and indices
-# id_to_idx_mapping = {game_id: idx for game_id, idx in zip(df['id'], df.index)}
-#
+
 
 def preprocess_data():
     # Load your data
@@ -94,7 +51,7 @@ def calculate_release_date_score(release_date):
     max_score = 1.0  # Maximum score for games released in the current year
     min_score = 0.1  # Minimum score for games released in years before 2005
 
-    if release_year == current_year:
+    if release_year >= current_year:
         return round(max_score, 2)  # Round to two decimal places
     elif release_year >= 2015:
         years_since_release = current_year - release_year
@@ -243,4 +200,4 @@ if __name__ == "__main__":
     get_recommendations(7331, cosine_sim, df, num_recommend=11)
 
     # Generate recommendations for all games
-    # get_all_recommendations(cosine_sim, df, num_recommend=11)
+    get_all_recommendations(cosine_sim, df, num_recommend=11)
