@@ -18,7 +18,9 @@ class CleanData:
         df['release_dates'] = df['release_dates'].apply(lambda x: x[0] if len(x) > 0 else '')
         df['websites'] = df['websites'].apply(
             lambda x: [(i['url'], i['category_name']) for i in x] if isinstance(x, list) else [])
+        df['unclean_name'] = df['name']
         df['unclean_summary'] = df['summary']
+
 
         # Cleaning game's name
         cleaned_name = df['name']
@@ -88,12 +90,9 @@ class CleanData:
                     # Give a full score of 1 to games released in the last 5 years
                     release_date_score = 1.0
                 else:
-                    # Gradually decrease the score for older releases
                     years_since_release = days_since_release / 365
-                    # Adjust the rate at which the score decreases as needed
-                    release_date_score = max(0, 1 - (years_since_release - years_for_full_score) / (
+                    release_date_score = max(0.1, 1 - (years_since_release - years_for_full_score) / (
                                 years_for_full_score * 2))
-                    # In this example, the score decreases linearly over the next 5 years
 
                     # Ensure the score is between 0 and 1
                     release_date_score = min(1, release_date_score)
