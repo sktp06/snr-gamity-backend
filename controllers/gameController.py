@@ -13,18 +13,6 @@ spell_checker = SpellChecker(language='en')
 
 class GameController:
     @staticmethod
-    # def get_games():
-    #     with open('assets/limit_games.pkl', 'rb') as file:
-    #         games = pickle.load(file)
-    #
-    #     # Convert the list of dictionaries to a DataFrame
-    #     df = pd.DataFrame(games)
-    #
-    #     # Convert the DataFrame to a dictionary with 'records' orientation
-    #     game_dict = df.to_dict('records')
-    #
-    #     return jsonify({'content': game_dict}), 200
-
     def get_games():
         with open('assets/limit_games.pkl', 'rb') as file:
             games = pickle.load(file)
@@ -91,7 +79,7 @@ class GameController:
 
     @staticmethod
     def get_upcoming():
-        with open('assets/parsed_data.pkl', 'rb') as file:
+        with open('assets/upcoming_games.pkl', 'rb') as file:
             games = pickle.load(file)
 
         # Convert the list of dictionaries to a DataFrame

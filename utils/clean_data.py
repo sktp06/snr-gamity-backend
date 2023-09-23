@@ -1,7 +1,6 @@
 import pandas as pd
 import string
 import pickle
-import re
 
 
 class CleanData:
@@ -135,8 +134,31 @@ class CleanData:
 
         return top_games
 
+    def get_upcoming_games(self):
+        # Load the cleaned data from parsed_data.pkl
+        with open('../assets/parsed_data.pkl', 'rb') as file:
+            df = pickle.load(file)
+
+        # Get today's date
+        today = pd.Timestamp.today()
+
+        # Filter games with valid release dates and release dates in the future (upcoming games)
+        upcoming_games = df[
+            df['release_dates'].apply(lambda x: isinstance(x, str) and pd.to_datetime(x, errors='coerce') > today)]
+
+        # Save the upcoming games to a new pickle file
+        # with open('../assets/upcoming_games.pkl', 'wb') as file:
+        #     pickle.dump(upcoming_games, file)
+
+        # Save the cleaned gameplay data to a JSON file
+        with open('../assets/upcoming_games.json', 'w') as file:
+            df.to_json(file, orient='records')
+
+        return upcoming_games
+
 
 cleaner = CleanData()  # Create an instance of the CleanData class
-df = cleaner.get_data("../assets/games.json")
-cleaned_df = cleaner.clean_data_gameplay()
-top_games_df = cleaner.select_top_games()
+# df = cleaner.get_data("../assets/games.json")
+# cleaned_df = cleaner.clean_data_gameplay()
+# top_games_df = cleaner.select_top_games()
+upcoming_games_df = cleaner.get_upcoming_games()

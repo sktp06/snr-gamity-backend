@@ -104,7 +104,7 @@ def get_clean_gameplay():
 
 @app.route('/game/upcoming', methods=['GET'])
 def get_upcoming():
-    with open('assets/parsed_data.pkl', 'rb') as file:
+    with open('assets/upcoming_games.pkl', 'rb') as file:
         games = pickle.load(file)
     results = pd.DataFrame(games)
 
