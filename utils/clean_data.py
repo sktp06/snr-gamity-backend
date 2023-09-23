@@ -151,8 +151,11 @@ class CleanData:
         #     pickle.dump(upcoming_games, file)
 
         # Save the cleaned gameplay data to a JSON file
-        with open('../assets/upcoming_games.json', 'w') as file:
-            df.to_json(file, orient='records')
+        # with open('../assets/upcoming_games.json', 'w') as file:
+        #     df.to_json(file, orient='records')
+
+        # Save the upcoming games to a CSV file
+        upcoming_games.to_csv('../assets/upcoming_games.csv', index=False)
 
         return upcoming_games
 

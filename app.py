@@ -124,6 +124,7 @@ def getBookmarkByUserId():
         temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
         games.append({'id': temp['id'],
                       'name': temp['name'],
+                      'unclean_name': temp['unclean_name'],
                       'cover': temp['cover'],
                       'release_dates': temp['release_dates'],
                       'unclean_summary': temp['unclean_summary'],
@@ -283,6 +284,7 @@ def recommendGames():
                             'id': recommended_game['id'],
                             'composite_score': recommended_game['composite_score'],
                             'name': temp['name'],
+                            'unclean_name': temp['unclean_name'],
                             'cover': temp['cover'],
                             'release_dates': temp['release_dates'],
                             'unclean_summary': temp['unclean_summary'],
