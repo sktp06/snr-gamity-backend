@@ -5,9 +5,6 @@ from flask import jsonify, request
 import pickle
 from spellchecker import SpellChecker
 
-from models import db
-from models.game import Game
-
 spell_checker = SpellChecker(language='en')
 
 
@@ -94,81 +91,25 @@ class GameController:
 
         return jsonify({'content': game_dict}), 200
 
-
-    # @staticmethod
-    # def query_name():
-    #     query = request.args.get('query')
-    #     spell_corr = [spell_checker.correction(w) for w in query.split()]
-    #     parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
-    #     results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
-    #
-    #     return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
-    #
-    # @staticmethod
-    # def query_summary():
-    #     query = request.args.get('query')
-    #     spell_corr = [spell_checker.correction(w) for w in query.split()]
-    #     parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
-    #     results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
-    #
-    #     return jsonify({'query': query, 'spell_corr': spell_corr, 'content': results.to_dict('records')}), 200
-    #
     @staticmethod
     def search():
         query = request.json['query']
-        spell_corr = [spell_checker.correction(w) for w in query.split()]
+        corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
-        with open('../assets/parsed_data.pkl', 'rb') as file:
+        with open('assets/limit_games.pkl', 'rb') as file:
             parsed_data = pickle.load(file)
 
+        # Use the corrected query in your search
         results = parsed_data[
-            parsed_data['name'].str.contains(query, case=False) |
-            parsed_data['summary'].str.contains(query, case=False)
+            parsed_data['name'].str.contains(corrected_query, case=False) |
+            parsed_data['summary'].str.contains(corrected_query, case=False)
             ]
 
         return jsonify({
             'query': query,
-            'spell_corr': spell_corr,
-            'results_name': results.to_dict('records')
+            'corrected_query': corrected_query,
+            'content': results.to_dict('records')
         }), 200
-
-    @staticmethod
-    def insert_data():
-        try:
-            # Read the CSV file and parse the data
-            data = pd.read_csv('../assets/parsed_data.csv')
-
-            # Iterate through the rows of the DataFrame and insert them into the database
-            for index, row in data.iterrows():
-                game = Game(
-                    id=row['id'],
-                    aggregated_rating=row['aggregated_rating'],
-                    aggregated_rating_count=row['aggregated_rating_count'],
-                    cover=row['cover'],
-                    genres=row['genres'],
-                    name=row['name'],
-                    rating=row['rating'],
-                    rating_count=row['rating_count'],
-                    release_dates=row['release_dates'],
-                    summary=row['summary'],
-                    url=row['url'],
-                    websites=row['websites'],
-                    main_story=row['main_story'],
-                    main_extra=row['main_extra'],
-                    completionist=row['completionist'],
-                    storyline=row['storyline'],
-                    unclean_summary=row['unclean_summary'],
-                    popularity=row['popularity']
-                )
-
-                db.session.add(game)
-
-            # Commit the changes to the database
-            db.session.commit()
-
-            return jsonify({'message': 'Data inserted successfully'}), 200
-        except Exception as e:
-            return jsonify({'message': 'Failed to insert data', 'error': str(e)}), 500
 
 
 

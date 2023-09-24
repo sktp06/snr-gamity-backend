@@ -2,8 +2,6 @@ import math
 import os
 import re
 from datetime import datetime
-
-import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -69,6 +67,7 @@ def get_games():
     json_result = result_df.to_json(orient='records')
 
     return json_result, 200
+
 
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
@@ -195,61 +194,6 @@ def register():
         return jsonify({'message': 'The request body requires username and password'}), 400
 
 
-# @app.route('/game/name', methods=['POST'])
-# def query_name():
-#     query = request.args.get('query')
-#     spell_corr = [spell_checker.correction(w) for w in query.split()]
-#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-#     results = parsed_data[parsed_data['name'].str.contains(query, case=False)]
-#     return results.to_json(orient='records')
-#
-#
-# @app.route('/game/summary', methods=['POST'])
-# def query_summary():
-#     query = request.args.get('query')
-#     spell_corr = [spell_checker.correction(w) for w in query.split()]
-#     parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-#     results = parsed_data[parsed_data['summary'].str.contains(query, case=False)]
-#     return results.to_json(orient='records')
-
-
-# @app.route('/game/search', methods=['POST'])
-# def search():
-#     query = request.args.get('query')
-#
-#     # Apply spell correction to each word in the query
-#     corrected_query_words = [spell_checker.correction(word) for word in query.split()]
-#     corrected_query = ' '.join(corrected_query_words)
-#
-#     # Load the clean_gameplay data
-#     with open('clean_gameplay.pkl', 'rb') as file:
-#         clean_gameplay_data = pickle.load(file)
-#
-#     # Convert the data to a DataFrame
-#     df = pd.DataFrame(clean_gameplay_data)
-#
-#     # Search in both 'name' and 'summary' columns
-#     results = df[df['name'].str.contains(corrected_query, case=False) |
-#                  df['summary'].str.contains(corrected_query, case=False)]
-#
-#     # Convert the DataFrame to a dictionary with 'records' orientation
-#     results_dict = results.to_dict('records')
-#
-#     return jsonify({
-#         'query': query,
-#         'corrected_query': corrected_query,
-#         'results': results_dict
-#     }), 200
-
-
-# @app.route('/correction', methods=['GET'])
-# def correction():
-#     query = request.args['query']
-#     spell_corr = [spell_checker.correction(w) for w in query.split()]
-#     if spell_corr[0] == None:
-#         return 'No correction'
-#     return jsonify(' '.join(spell_corr))
-
 @app.route('/bookmarks/recommend', methods=['POST'])
 def recommendGames():
     try:
@@ -315,58 +259,23 @@ def search():
     query = request.json['query']
     spell_corr = [spell_checker.correction(w) for w in query.split()]
 
-    with open('assets/clean_gameplay.pkl', 'rb') as file:
+    # Perform spell correction on the entire query as a phrase
+    corrected_query = " ".join(spell_corr)
+
+    with open('assets/limit_games.pkl', 'rb') as file:
         parsed_data = pickle.load(file)
 
     results = parsed_data[
-        parsed_data['name'].str.contains(query, case=False) |
-        parsed_data['summary'].str.contains(query, case=False)
-        ]
+        parsed_data['name'].str.contains(corrected_query, case=False) |
+        parsed_data['summary'].str.contains(corrected_query, case=False)
+    ]
 
     return jsonify({
         'query': query,
-        'spell_corr': spell_corr,
-        'results_name': results.to_dict('records')
+        'corrected_query': corrected_query,
+        'content': results.to_dict('records')
     }), 200
 
-@app.route('/game/insert_data', methods=['POST'])
-def insert_data():
-    try:
-        # Read the CSV file and parse the data
-        data = pd.read_csv('assets/parsed_data.csv')
-        data = data.replace({np.nan: None})
-
-        # Iterate through the rows of the DataFrame and insert them into the database
-        for index, row in data.iterrows():
-            game = Game(
-                id=row['id'],
-                aggregated_rating=row['aggregated_rating'],
-                aggregated_rating_count=row['aggregated_rating_count'],
-                cover=row['cover'],
-                genres=row['genres'],
-                name=row['name'],
-                rating=row['rating'],
-                rating_count=row['rating_count'],
-                release_dates=row['release_dates'],
-                summary=row['summary'],
-                url=row['url'],
-                websites=row['websites'],
-                main_story=row['main_story'],
-                main_extra=row['main_extra'],
-                completionist=row['completionist'],
-                storyline=row['storyline'],
-                unclean_summary=row['unclean_summary'],
-                popularity=row['popularity']
-            )
-
-            db.session.add(game)
-
-        # Commit the changes to the database
-        db.session.commit()
-
-        return jsonify({'message': 'Data inserted successfully'}), 200
-    except Exception as e:
-        return jsonify({'message': 'Failed to insert data', 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
