@@ -78,6 +78,9 @@ def get_game_statistics():
     genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
     total_genres = len(genre_counts)
 
+    upcoming_data = pickle.load(open('assets/upcoming_games.pkl', 'rb'))
+    total_upcoming_games = len(upcoming_data)
+
     # Get the modification time of the clean_data.py file
     clean_data_file = os.path.join(os.path.dirname(__file__), 'utils/game_time_data.py')
     modification_time = os.path.getmtime(clean_data_file)
@@ -87,7 +90,8 @@ def get_game_statistics():
         'update_date': update_date,
         'total_games': total_games,
         'total_genres': total_genres,
-        'genre_counts': genre_counts
+        'genre_counts': genre_counts,
+        'total_upcoming_games': total_upcoming_games,
     }
 
     return jsonify({'content': game_information}), 200
