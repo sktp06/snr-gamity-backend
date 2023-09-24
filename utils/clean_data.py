@@ -159,9 +159,25 @@ class CleanData:
 
         return upcoming_games
 
+    def combined_data_search(self):
+        with open('../assets/limit_games.pkl', 'rb') as limit_file, open('../assets/upcoming_games.pkl',
+                                                                         'rb') as upcoming_file:
+            limit_games = pickle.load(limit_file)
+            upcoming_games = pickle.load(upcoming_file)
+
+        combined_games = pd.concat([limit_games, upcoming_games], ignore_index=True)
+        combined_games.drop_duplicates(subset='id', keep='first', inplace=True)
+
+        # Save the combined and de-duplicated games to a new pickle file
+        with open('../assets/combined_data_search.pkl', 'wb') as combined_file:
+            pickle.dump(combined_games, combined_file)
+
+        return combined_games
 
 cleaner = CleanData()  # Create an instance of the CleanData class
 # df = cleaner.get_data("../assets/games.json")
 # cleaned_df = cleaner.clean_data_gameplay()
 # top_games_df = cleaner.select_top_games()
-upcoming_games_df = cleaner.get_upcoming_games()
+# upcoming_games_df = cleaner.get_upcoming_games()
+combined_games_df = cleaner.combined_data_search()
+

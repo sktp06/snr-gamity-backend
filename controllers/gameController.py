@@ -96,7 +96,7 @@ class GameController:
         query = request.json['query']
         corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
-        with open('assets/limit_games.pkl', 'rb') as file:
+        with open('assets/combined_data_search.pkl', 'rb') as file:
             parsed_data = pickle.load(file)
 
         # Use the corrected query in your search

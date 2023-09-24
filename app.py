@@ -262,7 +262,7 @@ def search():
     # Perform spell correction on the entire query as a phrase
     corrected_query = " ".join(spell_corr)
 
-    with open('assets/limit_games.pkl', 'rb') as file:
+    with open('assets/combined_data_search.pkl', 'rb') as file:
         parsed_data = pickle.load(file)
 
     results = parsed_data[
