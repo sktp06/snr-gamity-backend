@@ -59,7 +59,7 @@ class GameTimeMatcher:
 
 # Usage example
 hltb = HowLongToBeat()
-filename = '../utils/games.json'
+filename = '../assets/games.json'
 
 matcher = GameTimeMatcher(hltb)
 matcher.map_time_to_beat(filename)

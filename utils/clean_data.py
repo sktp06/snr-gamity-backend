@@ -20,7 +20,6 @@ class CleanData:
         df['unclean_name'] = df['name']
         df['unclean_summary'] = df['summary']
 
-
         # Cleaning game's name
         cleaned_name = df['name']
         cleaned_name = cleaned_name.str.lower()
@@ -48,12 +47,11 @@ class CleanData:
         df['aggregated_rating'].fillna(0.0, inplace=True)
         df['aggregated_rating_count'].fillna(0.0, inplace=True)
 
-
         # Save cleaned data to pickle file
         with open('../assets/parsed_data.pkl', 'wb') as file:
             pickle.dump(df, file)
 
-        csv_filename = 'parsed_data.csv'
+        csv_filename = '../assets/parsed_data.csv'
         df.to_csv(csv_filename, index=False)
 
         return df
@@ -70,7 +68,7 @@ class CleanData:
         weight_release_date = 0.4
 
         # Calculate the popularity score as a weighted sum
-        popularity = rating/100 * weight_rating + release_date_score * weight_release_date + aggregated_rating/100 * weight_aggregated_rating
+        popularity = rating / 100 * weight_rating + release_date_score * weight_release_date + aggregated_rating / 100 * weight_aggregated_rating
         return popularity
 
     def calculate_release_date_score(self, release_date):
@@ -91,7 +89,7 @@ class CleanData:
                 else:
                     years_since_release = days_since_release / 365
                     release_date_score = max(0.1, 1 - (years_since_release - years_for_full_score) / (
-                                years_for_full_score * 2))
+                            years_for_full_score * 2))
 
                     # Ensure the score is between 0 and 1
                     release_date_score = min(1, release_date_score)
@@ -150,10 +148,6 @@ class CleanData:
         # with open('../assets/upcoming_games.pkl', 'wb') as file:
         #     pickle.dump(upcoming_games, file)
 
-        # Save the cleaned gameplay data to a JSON file
-        # with open('../assets/upcoming_games.json', 'w') as file:
-        #     df.to_json(file, orient='records')
-
         # Save the upcoming games to a CSV file
         upcoming_games.to_csv('../assets/upcoming_games.csv', index=False)
 
@@ -174,10 +168,10 @@ class CleanData:
 
         return combined_games
 
+
 cleaner = CleanData()  # Create an instance of the CleanData class
-# df = cleaner.get_data("../assets/games.json")
+df = cleaner.get_data("../assets/games.json")
 # cleaned_df = cleaner.clean_data_gameplay()
 # top_games_df = cleaner.select_top_games()
 # upcoming_games_df = cleaner.get_upcoming_games()
-combined_games_df = cleaner.combined_data_search()
-
+# combined_games_df = cleaner.combined_data_search()

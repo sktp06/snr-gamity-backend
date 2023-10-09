@@ -92,18 +92,14 @@ class GameDataRetriever:
                 print('Error:', response.status_code)
                 break
 
-        return all_games
+        json_filename = '../assets/games.json'
+        with open(json_filename, 'w', encoding='utf-8') as json_file:
+            json.dump(all_games, json_file, indent=4)
 
-    def save_to_json(self, data, filename):
-        with open(filename, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, indent=4)
-
-    def execute(self):
-        all_games = self.retrieve_game_data()
-        json_filename = 'games.json'
-        self.save_to_json(all_games, json_filename)
         print(f'Successfully saved the data to {json_filename}')
+        return all_games
 
 
 retriever = GameDataRetriever()
-retriever.execute()
+all_games = retriever.retrieve_game_data()
+

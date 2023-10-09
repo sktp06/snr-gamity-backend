@@ -7,10 +7,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from passlib.handlers.bcrypt import bcrypt
 from spellchecker import SpellChecker
+from sqlalchemy import desc
 from sqlalchemy_utils.functions import database_exists, create_database
 
 from models import Bookmark, User
-from models.game import Game
+from models.recommend import Recommend
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -203,50 +204,51 @@ def recommendGames():
         if not bookmarks:
             return jsonify({'message': 'No bookmarks found for this user'}), 404
 
-        # Load the pre-computed recommendations
-        with open('assets/all_recommendations.pkl', 'rb') as file:
-            all_recommendations = pickle.load(file)
-
-        recommended_games_dict = {}  # Dictionary to store top recommendations for each bookmarked game
-
-        for bookmark in bookmarks:
-            game_id = bookmark.game_id
-            recommended_for_game = all_recommendations.get(str(game_id), [])
-            recommended_for_game.sort(key=lambda x: float(x['composite_score']), reverse=True)
-            top_recommended_for_game = recommended_for_game[:10]  # Retrieve the top 10 recommendations
-
-            recommended_games_dict[str(game_id)] = top_recommended_for_game
+        # Query the recommendation table and order by composite_score in descending order
+        recommended_games = (
+            Recommend.query
+            .filter(Recommend.game_id.in_([bookmark.game_id for bookmark in bookmarks]))
+            .order_by(desc(Recommend.composite_score))
+            .limit(10)
+            .all()
+        )
 
         # Load the parsed data as a dictionary
         parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
 
+        # Create a list to store the recommended games
         matching_games = []
 
-        for game_id, top_recommendations in recommended_games_dict.items():
-            for recommended_game in top_recommendations:
-                if recommended_game['id'] != int(
-                        game_id):  # Check if the recommended game is not the same as the bookmarked game
-                    filtered_data = parsed_data[parsed_data['id'] == recommended_game['id']]
-                    if not filtered_data.empty:
-                        temp = filtered_data.to_dict('records')[0]
-                        matching_games.append({
-                            'id': recommended_game['id'],
-                            'composite_score': recommended_game['composite_score'],
-                            'name': temp['name'],
-                            'unclean_name': temp['unclean_name'],
-                            'url': temp['url'],
-                            'cover': temp['cover'],
-                            'release_dates': temp['release_dates'],
-                            'unclean_summary': temp['unclean_summary'],
-                            'genres': temp['genres'],
-                            'main_story': temp['main_story'],
-                            'main_extra': temp['main_extra'],
-                            'completionist': temp['completionist'],
-                            'websites': temp['websites'],
-                            'aggregated_rating': temp['aggregated_rating'] if not math.isnan(
-                                temp['aggregated_rating']) else 0,
-                            'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
-                        })
+        for game in recommended_games:
+            game_id = game.recommended_game_id
+
+            # Check if the game is already in the bookmarks
+            if any(bookmark.game_id == game_id for bookmark in bookmarks):
+                continue  # Skip this game if it's in bookmarks
+
+            filtered_data = parsed_data[parsed_data['id'] == game_id]
+
+            if not filtered_data.empty:
+                temp = filtered_data.to_dict('records')[0]
+                matching_games.append({
+                    'id': game_id,
+                    'composite_score': game.composite_score,
+                    'name': temp['name'],
+                    'unclean_name': temp['unclean_name'],
+                    'url': temp['url'],
+                    'cover': temp['cover'],
+                    'release_dates': temp['release_dates'],
+                    'unclean_summary': temp['unclean_summary'],
+                    'genres': temp['genres'],
+                    # 'main_story': temp['main_story'],
+                    'main_extra': temp['main_extra'],
+                    'completionist': temp['completionist'],
+                    'websites': temp['websites'],
+                    'aggregated_rating': (
+                        temp['aggregated_rating'] if not math.isnan(temp['aggregated_rating']) else 0
+                    ),
+                    'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
+                })
 
         return jsonify({'recommended_games': matching_games}), 200
     except Exception as e:
