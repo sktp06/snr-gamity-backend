@@ -14,6 +14,7 @@ from sqlalchemy_utils.functions import database_exists, create_database
 from models import Bookmark, User
 from models.recommend import Recommend
 from models.topGame import TopGame
+from models.upComingGame import UpcomingGame
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -117,11 +118,42 @@ def get_clean_gameplay():
 
 @app.route('/game/upcoming', methods=['GET'])
 def get_upcoming():
-    with open('assets/upcoming_games.pkl', 'rb') as file:
-        games = pickle.load(file)
-    results = pd.DataFrame(games)
+    upcoming_games = UpcomingGame.query.all()
 
-    return results.to_json(orient='records')
+    # Create a list to store the top games
+    games = []
+
+    # Iterate over each game
+    for game in upcoming_games:
+        # Convert the string representation of genres to a list of strings
+        genres = ast.literal_eval(game.genres)
+
+        # Convert the game to a dictionary
+        game_dict = {
+            "id": game.id,
+            "cover": game.cover,
+            "genres": genres,  # Assign the converted list
+            "name": game.name,
+            "summary": game.summary,
+            "url": game.url,
+            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+            "main_story": game.main_story,
+            "main_extra": game.main_extra,
+            "completionist": game.completionist,
+            "aggregated_rating": game.aggregated_rating,
+            "aggregated_rating_count": game.aggregated_rating_count,
+            "rating": game.rating,
+            "rating_count": game.rating_count,
+            "release_dates": game.release_dates,
+            "storyline": game.storyline,
+            "unclean_name": game.unclean_name,
+            "unclean_summary": game.unclean_summary,
+            "popularity": game.popularity
+        }
+        games.append(game_dict)
+
+    # Return the list of games
+    return jsonify({'content': games}), 200
 
 
 @app.route('/bookmarks/', methods=['POST'])
