@@ -8,6 +8,8 @@ from models.gameStat import GameStat
 from models.topGame import TopGame
 from sqlalchemy import or_
 
+from models.upComingGame import UpcomingGame
+
 spell_checker = SpellChecker(language='en')
 
 
@@ -213,9 +215,5 @@ class GameController:
             'corrected_query': corrected_query,
             'content': games
         }), 200
-
-
-
-
 
 
