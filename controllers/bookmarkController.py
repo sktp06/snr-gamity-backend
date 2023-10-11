@@ -5,7 +5,7 @@ import pandas as pd
 from flask import jsonify, request
 from sqlalchemy import desc
 
-from models.AllGame import AllGame
+from models.allGame import AllGame
 from models.bookmark import Bookmark
 from models.database import db
 from models.recommend import Recommend

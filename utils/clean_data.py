@@ -1,3 +1,5 @@
+import datetime
+import os
 import re
 
 import pandas as pd
@@ -199,10 +201,53 @@ class CleanData:
 
         return combined_games
 
+    def get_game_statistics(self):
+        # Load parsed data from the pickle file
+        parsed_data = pickle.load(open('../assets/parsed_data.pkl', 'rb'))
+        total_games = len(parsed_data)
+
+        # Calculate genre counts
+        genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
+
+        # Filter out genre counts with multiple genres
+        single_genre_counts = {genre: count for genre, count in genre_counts.items() if len(eval(genre)) == 1}
+
+        total_genres = len(single_genre_counts)
+
+        # Get unique genres
+        unique_genres = parsed_data['genres'].explode().unique()
+
+        # Load upcoming data from the pickle file
+        upcoming_data = pickle.load(open('../assets/upcoming_games.pkl', 'rb'))
+        total_upcoming_games = len(upcoming_data)
+
+        # Get the modification time of the clean_data.py file
+        clean_data_file = os.path.join(os.path.dirname(__file__), '../utils/game_time_data.py')
+        modification_time = os.path.getmtime(clean_data_file)
+        update_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
+
+        # Create a dictionary with game information
+        game_information = {
+            'update_date': update_date,
+            'total_games': total_games,
+            'total_genres': total_genres,
+            'genre_counts': single_genre_counts,
+            'total_upcoming_games': total_upcoming_games,
+        }
+
+        # Convert the game_information dictionary to a DataFrame
+        game_info_df = pd.DataFrame([game_information])
+
+        # Save the DataFrame to a CSV file
+        game_info_df.to_csv('../assets/game_statistics.csv', index=False)
+
+        return  game_info_df
+
 
 cleaner = CleanData()  # Create an instance of the CleanData class
 # df = cleaner.get_data("../assets/games.json")
-cleaned_df = cleaner.clean_data_gameplay()
+# cleaned_df = cleaner.clean_data_gameplay()
 # top_games_df = cleaner.select_top_games()
 # upcoming_games_df = cleaner.get_upcoming_games()
 # combined_games_df = cleaner.combined_data_search()
+game_info_df = cleaner.get_game_statistics()

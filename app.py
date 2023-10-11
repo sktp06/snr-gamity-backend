@@ -13,7 +13,8 @@ from sqlalchemy import desc, or_, func
 from sqlalchemy_utils.functions import database_exists, create_database
 
 from models import Bookmark, User, upComingGame
-from models.AllGame import AllGame
+from models.allGame import AllGame
+from models.gameStat import GameStat
 from models.recommend import Recommend
 from models.topGame import TopGame
 from models.gamePlay import GamePlay
@@ -45,7 +46,6 @@ app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 @app.route('/game/data', methods=['GET'])
 def get_games():
-    # Query the database to retrieve data from the TopGame table
     top_games = TopGame.query.all()
 
     # Create a list to store the top games
@@ -86,29 +86,29 @@ def get_games():
 
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
-    parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-    total_games = len(parsed_data)
+    games_stat = GameStat.query.first()
 
-    genre_counts = parsed_data['genres'].explode().value_counts().to_dict()
-    total_genres = len(genre_counts)
+    if games_stat:
+        genre_count = ast.literal_eval(games_stat.genre_count)
 
-    upcoming_data = pickle.load(open('assets/upcoming_games.pkl', 'rb'))
-    total_upcoming_games = len(upcoming_data)
+        # Transform the genre_count structure
+        formatted_genre_count = {}
+        for genre, count in genre_count.items():
+            formatted_genre = genre[2:-2]  # Remove the square brackets
+            formatted_genre_count[formatted_genre] = count
 
-    # Get the modification time of the clean_data.py file
-    clean_data_file = os.path.join(os.path.dirname(__file__), 'utils/game_time_data.py')
-    modification_time = os.path.getmtime(clean_data_file)
-    update_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
+        game_information = {
+            "update_date": games_stat.update_date,
+            "total_games": games_stat.total_games,
+            "total_genres": games_stat.total_genres,
+            "genre_counts": formatted_genre_count,  # Changed the key to "genre_counts"
+            "total_upcoming_games": games_stat.total_upcoming_games
+        }
 
-    game_information = {
-        'update_date': update_date,
-        'total_games': total_games,
-        'total_genres': total_genres,
-        'genre_counts': genre_counts,
-        'total_upcoming_games': total_upcoming_games,
-    }
+        return jsonify({'content': game_information}), 200
+    else:
+        return jsonify({'content': 'No game statistics found'}), 404
 
-    return jsonify({'content': game_information}), 200
 
 @app.route('/game/clean_data', methods=['GET'])
 def get_clean_gameplay():
@@ -332,6 +332,7 @@ def recommendGames():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
+
 
 @app.route('/game/search', methods=['POST'])
 def search():
