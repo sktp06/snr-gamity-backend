@@ -23,14 +23,12 @@ class GameController:
 
         # Iterate over each game
         for game in top_games:
-            # Convert the string representation of genres to a list of strings
-            genres = ast.literal_eval(game.genres)
 
             # Convert the game to a dictionary
             game_dict = {
                 "id": game.id,
                 "cover": game.cover,
-                "genres": genres,  # Assign the converted list
+                "genres": ast.literal_eval(game.genres),  # Assign the converted list
                 "name": game.name,
                 "summary": game.summary,
                 "url": game.url,
@@ -101,14 +99,12 @@ class GameController:
 
         # Iterate over each game
         for game in upcoming_games:
-            # Convert the string representation of genres to a list of strings
-            genres = ast.literal_eval(game.genres)
 
             # Convert the game to a dictionary
             game_dict = {
                 "id": game.id,
                 "cover": game.cover,
-                "genres": genres,  # Assign the converted list
+                "genres": ast.literal_eval(game.genres),  # Assign the converted list
                 "name": game.name,
                 "summary": game.summary,
                 "url": game.url,
@@ -144,14 +140,38 @@ class GameController:
             )
         ).all()
 
-        # Convert the query results to a list of dictionaries
-        games = [game.serialize for game in results]
+        # Convert the query results to a list of dictionaries with genres and websites as lists
+        games = []
+        for game in results:
+            game_dict = {
+                "id": game.id,
+                "cover": game.cover,
+                "genres": ast.literal_eval(game.genres),  # Assign the converted list
+                "name": game.name,
+                "summary": game.summary,
+                "url": game.url,
+                "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+                "main_story": game.main_story,
+                "main_extra": game.main_extra,
+                "completionist": game.completionist,
+                "aggregated_rating": game.aggregated_rating,
+                "aggregated_rating_count": game.aggregated_rating_count,
+                "rating": game.rating,
+                "rating_count": game.rating_count,
+                "release_dates": game.release_dates,
+                "storyline": game.storyline,
+                "unclean_name": game.unclean_name,
+                "unclean_summary": game.unclean_summary,
+                "popularity": game.popularity
+            }
+            games.append(game_dict)
 
         return jsonify({
             'query': query,
             'corrected_query': corrected_query,
             'content': games
         }), 200
+
 
 
 

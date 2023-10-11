@@ -150,18 +150,19 @@ class CleanData:
         with open('../assets/parsed_data.pkl', 'rb') as file:
             df = pickle.load(file)
 
+        # Drop duplicates based on the 'id' column
+        df = df.drop_duplicates(subset='id')
+
         # Sort by popularity score in descending order
         sorted_games = df.sort_values(by=['popularity'], ascending=[False])
 
         # Select the top 5000 games
         top_games = sorted_games.head(5000)
 
-        top_games = top_games.drop_duplicates(subset='id')
-
         csv_filename = '../assets/limit_games.csv'
 
         # Save the top games to a CSV file
-        top_games.to_csv(csv_filename, index=False)  # Use top_games instead of df
+        top_games.to_csv(csv_filename, index=False)
 
         return top_games
 

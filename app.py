@@ -1,4 +1,5 @@
 import ast
+import json
 import math
 import os
 import re
@@ -175,7 +176,7 @@ def getBookmarkByUserId():
                       'cover': temp['cover'],
                       'release_dates': temp['release_dates'],
                       'unclean_summary': temp['unclean_summary'],
-                      'genres': temp['genres'],
+                      'genres': ast.literal_eval(temp['genres']),
                       'main_story': temp['main_story'],
                       'main_extra': temp['main_extra'],
                       'completionist': temp['completionist'],
@@ -281,8 +282,8 @@ def recommendGames():
                     'cover': temp['cover'],
                     'release_dates': temp['release_dates'],
                     'unclean_summary': temp['unclean_summary'],
-                    'genres': temp['genres'],
-                    # 'main_story': temp['main_story'],
+                    'genres': ast.literal_eval(temp['genres']),
+                    'main_story': temp['main_story'],
                     'main_extra': temp['main_extra'],
                     'completionist': temp['completionist'],
                     'websites': temp['websites'],
@@ -297,7 +298,6 @@ def recommendGames():
         print(f"Error: {e}")
         return jsonify({'message': 'Failed to generate recommendations', 'error': str(e)}), 500
 
-
 @app.route('/game/search', methods=['POST'])
 def search():
     query = request.json['query']
@@ -311,8 +311,31 @@ def search():
         )
     ).all()
 
-    # Convert the query results to a list of dictionaries
-    games = [game.serialize for game in results]
+    # Convert the query results to a list of dictionaries with genres and websites as lists
+    games = []
+    for game in results:
+        game_dict = {
+            "id": game.id,
+            "cover": game.cover,
+            "genres": ast.literal_eval(game.genres),  # Assign the converted list
+            "name": game.name,
+            "summary": game.summary,
+            "url": game.url,
+            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+            "main_story": game.main_story,
+            "main_extra": game.main_extra,
+            "completionist": game.completionist,
+            "aggregated_rating": game.aggregated_rating,
+            "aggregated_rating_count": game.aggregated_rating_count,
+            "rating": game.rating,
+            "rating_count": game.rating_count,
+            "release_dates": game.release_dates,
+            "storyline": game.storyline,
+            "unclean_name": game.unclean_name,
+            "unclean_summary": game.unclean_summary,
+            "popularity": game.popularity
+        }
+        games.append(game_dict)
 
     return jsonify({
         'query': query,

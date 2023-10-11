@@ -1,3 +1,4 @@
+import ast
 import math
 import pickle
 import pandas as pd
@@ -28,7 +29,7 @@ class BookmarkController:
                           'cover': temp['cover'],
                           'release_dates': temp['release_dates'],
                           'unclean_summary': temp['unclean_summary'],
-                          'genres': temp['genres'],
+                          'genres': ast.literal_eval(temp['genres']),
                           'main_story': temp['main_story'],
                           'main_extra': temp['main_extra'],
                           'completionist': temp['completionist'],
@@ -109,7 +110,7 @@ class BookmarkController:
                         'cover': temp['cover'],
                         'release_dates': temp['release_dates'],
                         'unclean_summary': temp['unclean_summary'],
-                        'genres': temp['genres'],
+                        'genres': ast.literal_eval(temp['genres']),
                         'main_story': temp['main_story'],
                         'main_extra': temp['main_extra'],
                         'completionist': temp['completionist'],
