@@ -10,7 +10,4 @@ class GameBlueprint:
     game_bp.route('/clean_gameplay', methods=['GET'])(GameController.get_clean_gameplay)
     game_bp.route('/upcoming', methods=['GET'])(GameController.get_upcoming)
     game_bp.route('/search', methods=['POST'])(GameController.search)
-    game_bp.route('/insert_data', methods=['POST'])(GameController.insert_data)
-    # game_bp.route('/name', methods=['POST'])(GameController.query_name)
-    # game_bp.route('/summary', methods=['POST'])(GameController.query_summary)
 

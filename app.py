@@ -1,18 +1,13 @@
 import ast
-import json
-import math
-import os
 import re
-from datetime import datetime
-import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from passlib.handlers.bcrypt import bcrypt
 from spellchecker import SpellChecker
-from sqlalchemy import desc, or_, func
+from sqlalchemy import desc, or_
 from sqlalchemy_utils.functions import database_exists, create_database
 
-from models import Bookmark, User, upComingGame
+from models import Bookmark, User
 from models.allGame import AllGame
 from models.gameStat import GameStat
 from models.recommend import Recommend
@@ -23,8 +18,6 @@ from models.game import Game
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
-import pickle
-import datetime
 
 spell_checker = SpellChecker(language='en')
 
@@ -46,145 +39,159 @@ app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 @app.route('/game/data', methods=['GET'])
 def get_games():
-    top_games = TopGame.query.all()
+    try:
+        top_games = TopGame.query.all()
 
-    # Create a list to store the top games
-    games = []
+        games = []
 
-    # Iterate over each game
-    for game in top_games:
-        # Convert the string representation of genres to a list of strings
-        genres = ast.literal_eval(game.genres)
+        for game in top_games:
+            genres = ast.literal_eval(game.genres)
 
-        # Convert the game to a dictionary
-        game_dict = {
-            "id": game.id,
-            "cover": game.cover,
-            "genres": genres,  # Assign the converted list
-            "name": game.name,
-            "summary": game.summary,
-            "url": game.url,
-            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
-            "main_story": game.main_story,
-            "main_extra": game.main_extra,
-            "completionist": game.completionist,
-            "aggregated_rating": game.aggregated_rating,
-            "aggregated_rating_count": game.aggregated_rating_count,
-            "rating": game.rating,
-            "rating_count": game.rating_count,
-            "release_dates": game.release_dates,
-            "storyline": game.storyline,
-            "unclean_name": game.unclean_name,
-            "unclean_summary": game.unclean_summary,
-            "popularity": game.popularity
-        }
-        games.append(game_dict)
+            game_dict = {
+                "id": game.id,
+                "cover": game.cover,
+                "genres": genres,
+                "name": game.name,
+                "summary": game.summary,
+                "url": game.url,
+                "websites": ast.literal_eval(game.websites),
+                "main_story": game.main_story,
+                "main_extra": game.main_extra,
+                "completionist": game.completionist,
+                "aggregated_rating": game.aggregated_rating,
+                "aggregated_rating_count": game.aggregated_rating_count,
+                "rating": game.rating,
+                "rating_count": game.rating_count,
+                "release_dates": game.release_dates,
+                "storyline": game.storyline,
+                "unclean_name": game.unclean_name,
+                "unclean_summary": game.unclean_summary,
+                "popularity": game.popularity
+            }
+            games.append(game_dict)
 
-    # Return the list of games
-    return jsonify({'content': games}), 200
+        if not games:
+            # No data found, return a custom error response with 404 status
+            return jsonify({'error': 'No game data found'}), 404
+
+        return jsonify({'content': games}), 200
+
+    except Exception as e:
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
 @app.route('/game/stat', methods=['GET'])
 def get_game_statistics():
-    games_stat = GameStat.query.first()
+    try:
+        games_stat = GameStat.query.first()
 
-    if games_stat:
-        genre_count = ast.literal_eval(games_stat.genre_count)
+        if games_stat:
+            genre_count = ast.literal_eval(games_stat.genre_count)
 
-        # Transform the genre_count structure
-        formatted_genre_count = {}
-        for genre, count in genre_count.items():
-            formatted_genre = genre[2:-2]  # Remove the square brackets
-            formatted_genre_count[formatted_genre] = count
+            # Transform the genre_count structure
+            formatted_genre_count = {}
+            for genre, count in genre_count.items():
+                formatted_genre = genre[2:-2]  # Remove the square brackets
+                formatted_genre_count[formatted_genre] = count
 
-        game_information = {
-            "update_date": games_stat.update_date,
-            "total_games": games_stat.total_games,
-            "total_genres": games_stat.total_genres,
-            "genre_counts": formatted_genre_count,  # Changed the key to "genre_counts"
-            "total_upcoming_games": games_stat.total_upcoming_games
-        }
+            game_information = {
+                "update_date": games_stat.update_date,
+                "total_games": games_stat.total_games,
+                "total_genres": games_stat.total_genres,
+                "genre_counts": formatted_genre_count,  # Changed the key to "genre_counts"
+                "total_upcoming_games": games_stat.total_upcoming_games
+            }
 
-        return jsonify({'content': game_information}), 200
-    else:
-        return jsonify({'content': 'No game statistics found'}), 404
+            return jsonify({'content': game_information}), 200
+        else:
+            return jsonify({'content': 'No game statistics found'}), 404
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
 @app.route('/game/clean_data', methods=['GET'])
 def get_clean_gameplay():
-    gameplay = GamePlay.query.all()
+    try:
+        gameplay = GamePlay.query.all()
 
-    # Create a list to store the top games
-    games = []
+        games = []
 
-    # Iterate over each game
-    for game in gameplay:
-        # Convert the game to a dictionary
-        game_dict = {
-            "id": game.id,
-            "cover": game.cover,
-            "genres": ast.literal_eval(game.genres),  # Assign the converted list
-            "name": game.name,
-            "summary": game.summary,
-            "url": game.url,
-            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
-            "main_story": game.main_story,
-            "main_extra": game.main_extra,
-            "completionist": game.completionist,
-            "aggregated_rating": game.aggregated_rating,
-            "aggregated_rating_count": game.aggregated_rating_count,
-            "rating": game.rating,
-            "rating_count": game.rating_count,
-            "release_dates": game.release_dates,
-            "storyline": game.storyline,
-            "unclean_name": game.unclean_name,
-            "unclean_summary": game.unclean_summary,
-            "popularity": game.popularity
-        }
-        games.append(game_dict)
+        for game in gameplay:
+            game_dict = {
+                "id": game.id,
+                "cover": game.cover,
+                "genres": ast.literal_eval(game.genres),
+                "name": game.name,
+                "summary": game.summary,
+                "url": game.url,
+                "websites": ast.literal_eval(game.websites),
+                "main_story": game.main_story,
+                "main_extra": game.main_extra,
+                "completionist": game.completionist,
+                "aggregated_rating": game.aggregated_rating,
+                "aggregated_rating_count": game.aggregated_rating_count,
+                "rating": game.rating,
+                "rating_count": game.rating_count,
+                "release_dates": game.release_dates,
+                "storyline": game.storyline,
+                "unclean_name": game.unclean_name,
+                "unclean_summary": game.unclean_summary,
+                "popularity": game.popularity
+            }
+            games.append(game_dict)
 
-    # Return the list of games
-    return jsonify({'content': games}), 200
+        if not games:
+            return jsonify({'error': 'No gameplay data found'}), 404
 
+        return jsonify({'content': games}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route('/game/upcoming', methods=['GET'])
 def get_upcoming():
-    upcoming_games = UpcomingGame.query.all()
+    try:
+        upcoming_games = UpcomingGame.query.all()
 
-    # Create a list to store the top games
-    games = []
+        games = []
 
-    # Iterate over each game
-    for game in upcoming_games:
-        # Convert the string representation of genres to a list of strings
-        genres = ast.literal_eval(game.genres)
+        for game in upcoming_games:
+            # Convert the string representation of genres to a list of strings
+            genres = ast.literal_eval(game.genres)
 
-        # Convert the game to a dictionary
-        game_dict = {
-            "id": game.id,
-            "cover": game.cover,
-            "genres": genres,  # Assign the converted list
-            "name": game.name,
-            "summary": game.summary,
-            "url": game.url,
-            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
-            "main_story": game.main_story,
-            "main_extra": game.main_extra,
-            "completionist": game.completionist,
-            "aggregated_rating": game.aggregated_rating,
-            "aggregated_rating_count": game.aggregated_rating_count,
-            "rating": game.rating,
-            "rating_count": game.rating_count,
-            "release_dates": game.release_dates,
-            "storyline": game.storyline,
-            "unclean_name": game.unclean_name,
-            "unclean_summary": game.unclean_summary,
-            "popularity": game.popularity
-        }
-        games.append(game_dict)
+            game_dict = {
+                "id": game.id,
+                "cover": game.cover,
+                "genres": genres,
+                "name": game.name,
+                "summary": game.summary,
+                "url": game.url,
+                "websites": ast.literal_eval(game.websites),
+                "main_story": game.main_story,
+                "main_extra": game.main_extra,
+                "completionist": game.completionist,
+                "aggregated_rating": game.aggregated_rating,
+                "aggregated_rating_count": game.aggregated_rating_count,
+                "rating": game.rating,
+                "rating_count": game.rating_count,
+                "release_dates": game.release_dates,
+                "storyline": game.storyline,
+                "unclean_name": game.unclean_name,
+                "unclean_summary": game.unclean_summary,
+                "popularity": game.popularity
+            }
+            games.append(game_dict)
 
-    # Return the list of games
-    return jsonify({'content': games}), 200
+        if not games:
+            return jsonify({'error': 'No upcoming games found'}), 404
+
+        return jsonify({'content': games}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 
 @app.route('/bookmarks/', methods=['POST'])
@@ -337,6 +344,9 @@ def recommendGames():
 @app.route('/game/search', methods=['POST'])
 def search():
     query = request.json['query']
+    if query is None:
+        return jsonify({'error': 'Query cannot be null'}), 400
+
     corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
     # Perform a database query to search for games

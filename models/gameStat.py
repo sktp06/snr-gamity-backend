@@ -3,7 +3,7 @@ from .database import db
 class GameStat(db.Model):
     __tablename__ = 'gameStat'
 
-    id = db.Column(db.Integer, primary_key=True)  # Define id as the primary key
+    id = db.Column(db.Integer, primary_key=True)
     update_date = db.Column(db.String(2000))
     total_games = db.Column(db.Integer)
     total_genres = db.Column(db.Integer)

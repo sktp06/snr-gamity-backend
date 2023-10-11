@@ -1,7 +1,4 @@
 import ast
-import math
-import pickle
-import pandas as pd
 from flask import jsonify, request
 from sqlalchemy import desc
 
