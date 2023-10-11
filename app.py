@@ -1,3 +1,4 @@
+import ast
 import math
 import os
 import re
@@ -12,6 +13,7 @@ from sqlalchemy_utils.functions import database_exists, create_database
 
 from models import Bookmark, User
 from models.recommend import Recommend
+from models.topGame import TopGame
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -38,36 +40,43 @@ app.register_blueprint(BookmarkBlueprint.bookmark_bp)
 
 @app.route('/game/data', methods=['GET'])
 def get_games():
-    with open('assets/limit_games.pkl', 'rb') as file:
-        games = pickle.load(file)
+    # Query the database to retrieve data from the TopGame table
+    top_games = TopGame.query.all()
 
-    # Convert the list of dictionaries to a DataFrame
-    df = pd.DataFrame(games)
+    # Create a list to store the top games
+    games = []
 
-    # Create an empty list to store the top games for each genre
-    top_games_by_genre = []
+    # Iterate over each game
+    for game in top_games:
+        # Convert the string representation of genres to a list of strings
+        genres = ast.literal_eval(game.genres)
 
-    # Iterate over each genre
-    for genre in df['genres'].explode().unique():
-        # Filter the DataFrame for games with the current genre
-        genre_df = df[df['genres'].apply(lambda x: genre in x)]
+        # Convert the game to a dictionary
+        game_dict = {
+            "id": game.id,
+            "cover": game.cover,
+            "genres": genres,  # Assign the converted list
+            "name": game.name,
+            "summary": game.summary,
+            "url": game.url,
+            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+            "main_story": game.main_story,
+            "main_extra": game.main_extra,
+            "completionist": game.completionist,
+            "aggregated_rating": game.aggregated_rating,
+            "aggregated_rating_count": game.aggregated_rating_count,
+            "rating": game.rating,
+            "rating_count": game.rating_count,
+            "release_dates": game.release_dates,
+            "storyline": game.storyline,
+            "unclean_name": game.unclean_name,
+            "unclean_summary": game.unclean_summary,
+            "popularity": game.popularity
+        }
+        games.append(game_dict)
 
-        # Sort by popularity score and rating score in descending order
-        sorted_games = genre_df.sort_values(by=['popularity'], ascending=[False])
-
-        # Append the top games for the current genre to the list
-        top_games_by_genre.append(sorted_games)
-
-    # Concatenate the list of DataFrames into a single DataFrame
-    result_df = pd.concat(top_games_by_genre)
-
-    # Drop duplicate games based on 'id'
-    result_df = result_df.drop_duplicates(subset='id')
-
-    # Convert the DataFrame to a JSON string with 'records' orientation
-    json_result = result_df.to_json(orient='records')
-
-    return json_result, 200
+    # Return the list of games
+    return jsonify({'content': games}), 200
 
 
 @app.route('/game/stat', methods=['GET'])

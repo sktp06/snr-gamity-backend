@@ -10,8 +10,10 @@ from nltk.stem import PorterStemmer
 
 
 def preprocess_data():
-    # Load your data
-    df = pd.read_csv('../assets/parsed_data.csv')
+    # Load your data from a Pickle file
+    df = pd.read_pickle('assets/parsed_data.pkl')
+
+    # Rest of your data preprocessing code remains the same
     df['summary'] = df['summary'].fillna('')
     df = df.drop_duplicates(subset='id')
     df = df.loc[df['summary'].apply(lambda s: len(np.unique(s.split()))) >= 15].reset_index(drop=True)
@@ -194,10 +196,10 @@ def get_all_recommendations(cosine_sim, df, num_recommend=11):
 # Example usage
 if __name__ == "__main__":
     df = preprocess_data()
-    cosine_sim = compute_cosine_similarity(df)
+    # cosine_sim = compute_cosine_similarity(df)
 
     # Generate recommendations for a single game
-    get_recommendations(7331, cosine_sim, df, num_recommend=11)
+    # get_recommendations(7331, cosine_sim, df, num_recommend=11)
 
     # Generate recommendations for all games
-    get_all_recommendations(cosine_sim, df, num_recommend=11)
+    # get_all_recommendations(cosine_sim, df, num_recommend=11)
