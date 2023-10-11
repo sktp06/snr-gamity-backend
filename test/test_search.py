@@ -190,6 +190,17 @@ class TestSearchEndpoint(unittest.TestCase):
                                                           "story you experience.")
         self.assertEqual(first_result['popularity'], 0.760862)
 
+    def test_search_with_valid_query(self):
+        # Define a valid query
+        valid_query = "the witcher"
+
+        # Prepare a request with the valid query
+        response = self.app.post('/game/search', data=json.dumps({'query': valid_query}),
+                                 content_type='application/json')
+
+        # Check the response status code
+        self.assertEqual(response.status_code, 200)
+
     def test_search_with_null_query(self):
         # Prepare a request with a null query
         response = self.app.post('/game/search', data=json.dumps({'query': None}),
