@@ -8,13 +8,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from passlib.handlers.bcrypt import bcrypt
 from spellchecker import SpellChecker
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from sqlalchemy_utils.functions import database_exists, create_database
 
 from models import Bookmark, User
 from models.recommend import Recommend
 from models.topGame import TopGame
 from models.upComingGame import UpcomingGame
+from models.game import Game
 from routes.auth_bp import AuthBlueprint
 from routes.bookmark_bp import BookmarkBlueprint
 from models.database import db
@@ -300,25 +301,24 @@ def recommendGames():
 @app.route('/game/search', methods=['POST'])
 def search():
     query = request.json['query']
-    spell_corr = [spell_checker.correction(w) for w in query.split()]
+    corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
-    # Perform spell correction on the entire query as a phrase
-    corrected_query = " ".join(spell_corr)
+    # Perform a database query to search for games
+    results = Game.query.filter(
+        or_(
+            Game.name.ilike(f'%{corrected_query}%'),
+            Game.summary.ilike(f'%{corrected_query}%')
+        )
+    ).all()
 
-    with open('assets/combined_data_search.pkl', 'rb') as file:
-        parsed_data = pickle.load(file)
-
-    results = parsed_data[
-        parsed_data['name'].str.contains(corrected_query, case=False) |
-        parsed_data['summary'].str.contains(corrected_query, case=False)
-    ]
+    # Convert the query results to a list of dictionaries
+    games = [game.serialize for game in results]
 
     return jsonify({
         'query': query,
         'corrected_query': corrected_query,
-        'content': results.to_dict('records')
+        'content': games
     }), 200
-
 
 
 if __name__ == '__main__':

@@ -6,7 +6,9 @@ from flask import jsonify, request
 import pickle
 from spellchecker import SpellChecker
 
+from models.game import Game
 from models.topGame import TopGame
+from sqlalchemy import or_
 
 spell_checker = SpellChecker(language='en')
 
@@ -134,19 +136,21 @@ class GameController:
         query = request.json['query']
         corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
-        with open('assets/combined_data_search.pkl', 'rb') as file:
-            parsed_data = pickle.load(file)
+        # Perform a database query to search for games
+        results = Game.query.filter(
+            or_(
+                Game.name.ilike(f'%{corrected_query}%'),
+                Game.summary.ilike(f'%{corrected_query}%')
+            )
+        ).all()
 
-        # Use the corrected query in your search
-        results = parsed_data[
-            parsed_data['name'].str.contains(corrected_query, case=False) |
-            parsed_data['summary'].str.contains(corrected_query, case=False)
-            ]
+        # Convert the query results to a list of dictionaries
+        games = [game.serialize for game in results]
 
         return jsonify({
             'query': query,
             'corrected_query': corrected_query,
-            'content': results.to_dict('records')
+            'content': games
         }), 200
 
 
