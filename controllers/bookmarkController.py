@@ -5,6 +5,7 @@ import pandas as pd
 from flask import jsonify, request
 from sqlalchemy import desc
 
+from models.AllGame import AllGame
 from models.bookmark import Bookmark
 from models.database import db
 from models.recommend import Recommend
@@ -19,27 +20,34 @@ class BookmarkController:
             return jsonify({'message': 'The bookmark list is empty'}), 404
 
         games = []
-        parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-        for b in bookmarks:
-            temp = parsed_data[parsed_data['id'] == b.game_id].to_dict('records')[0]
-            games.append({'id': temp['id'],
-                          'name': temp['name'],
-                          'unclean_name': temp['unclean_name'],
-                          'url': temp['url'],
-                          'cover': temp['cover'],
-                          'release_dates': temp['release_dates'],
-                          'unclean_summary': temp['unclean_summary'],
-                          'genres': ast.literal_eval(temp['genres']),
-                          'main_story': temp['main_story'],
-                          'main_extra': temp['main_extra'],
-                          'completionist': temp['completionist'],
-                          'websites': temp['websites'],
-                          'aggregated_rating': temp['aggregated_rating'] if not math.isnan(
-                              temp['aggregated_rating']) else 0,
-                          'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
-                          })
-        return jsonify({'games': games}), 200
 
+        for bookmark in bookmarks:
+            all_game = AllGame.query.get(bookmark.game_id)
+            if all_game:
+                game_data = {
+                    "id": all_game.id,
+                    "cover": all_game.cover,
+                    "genres": ast.literal_eval(all_game.genres),  # Assign the converted list
+                    "name": all_game.name,
+                    "summary": all_game.summary,
+                    "url": all_game.url,
+                    "websites": ast.literal_eval(all_game.websites),  # Convert websites to a list
+                    "main_story": all_game.main_story,
+                    "main_extra": all_game.main_extra,
+                    "completionist": all_game.completionist,
+                    "aggregated_rating": all_game.aggregated_rating,
+                    "aggregated_rating_count": all_game.aggregated_rating_count,
+                    "rating": all_game.rating,
+                    "rating_count": all_game.rating_count,
+                    "release_dates": all_game.release_dates,
+                    "storyline": all_game.storyline,
+                    "unclean_name": all_game.unclean_name,
+                    "unclean_summary": all_game.unclean_summary,
+                    "popularity": all_game.popularity
+                }
+                games.append(game_data)
+
+        return jsonify({'games': games}), 200
     @staticmethod
     def addBookmark():
         try:
@@ -84,9 +92,6 @@ class BookmarkController:
                 .all()
             )
 
-            # Load the parsed data as a dictionary
-            parsed_data = pickle.load(open('assets/parsed_data.pkl', 'rb'))
-
             # Create a list to store the recommended games
             matching_games = []
 
@@ -97,28 +102,29 @@ class BookmarkController:
                 if any(bookmark.game_id == game_id for bookmark in bookmarks):
                     continue  # Skip this game if it's in bookmarks
 
-                filtered_data = parsed_data[parsed_data['id'] == game_id]
+                all_game = AllGame.query.get(game_id)
 
-                if not filtered_data.empty:
-                    temp = filtered_data.to_dict('records')[0]
+                if all_game:
                     matching_games.append({
-                        'id': game_id,
-                        'composite_score': game.composite_score,
-                        'name': temp['name'],
-                        'unclean_name': temp['unclean_name'],
-                        'url': temp['url'],
-                        'cover': temp['cover'],
-                        'release_dates': temp['release_dates'],
-                        'unclean_summary': temp['unclean_summary'],
-                        'genres': ast.literal_eval(temp['genres']),
-                        'main_story': temp['main_story'],
-                        'main_extra': temp['main_extra'],
-                        'completionist': temp['completionist'],
-                        'websites': temp['websites'],
-                        'aggregated_rating': (
-                            temp['aggregated_rating'] if not math.isnan(temp['aggregated_rating']) else 0
-                        ),
-                        'rating': temp['rating'] if not math.isnan(temp['rating']) else 0,
+                        "id": all_game.id,
+                        "cover": all_game.cover,
+                        "genres": ast.literal_eval(all_game.genres),
+                        "name": all_game.name,
+                        "summary": all_game.summary,
+                        "url": all_game.url,
+                        "websites": ast.literal_eval(all_game.websites),
+                        "main_story": all_game.main_story,
+                        "main_extra": all_game.main_extra,
+                        "completionist": all_game.completionist,
+                        "aggregated_rating": all_game.aggregated_rating,
+                        "aggregated_rating_count": all_game.aggregated_rating_count,
+                        "rating": all_game.rating,
+                        "rating_count": all_game.rating_count,
+                        "release_dates": all_game.release_dates,
+                        "storyline": all_game.storyline,
+                        "unclean_name": all_game.unclean_name,
+                        "unclean_summary": all_game.unclean_summary,
+                        "popularity": all_game.popularity,
                     })
 
             return jsonify({'recommended_games': matching_games}), 200
