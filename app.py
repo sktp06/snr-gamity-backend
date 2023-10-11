@@ -15,6 +15,7 @@ from sqlalchemy_utils.functions import database_exists, create_database
 from models import Bookmark, User
 from models.recommend import Recommend
 from models.topGame import TopGame
+from models.gamePlay import GamePlay
 from models.upComingGame import UpcomingGame
 from models.game import Game
 from routes.auth_bp import AuthBlueprint
@@ -111,11 +112,39 @@ def get_game_statistics():
 
 @app.route('/game/clean_data', methods=['GET'])
 def get_clean_gameplay():
-    with open('assets/clean_gameplay.pkl', 'rb') as file:
-        games = pickle.load(file)
-    results = pd.DataFrame(games)
+    gameplay = GamePlay.query.all()
 
-    return results.to_json(orient='records')
+    # Create a list to store the top games
+    games = []
+
+    # Iterate over each game
+    for game in gameplay:
+        # Convert the game to a dictionary
+        game_dict = {
+            "id": game.id,
+            "cover": game.cover,
+            "genres": ast.literal_eval(game.genres),  # Assign the converted list
+            "name": game.name,
+            "summary": game.summary,
+            "url": game.url,
+            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+            "main_story": game.main_story,
+            "main_extra": game.main_extra,
+            "completionist": game.completionist,
+            "aggregated_rating": game.aggregated_rating,
+            "aggregated_rating_count": game.aggregated_rating_count,
+            "rating": game.rating,
+            "rating_count": game.rating_count,
+            "release_dates": game.release_dates,
+            "storyline": game.storyline,
+            "unclean_name": game.unclean_name,
+            "unclean_summary": game.unclean_summary,
+            "popularity": game.popularity
+        }
+        games.append(game_dict)
+
+    # Return the list of games
+    return jsonify({'content': games}), 200
 
 
 @app.route('/game/upcoming', methods=['GET'])

@@ -137,6 +137,8 @@ class CleanData:
         with open('../assets/parsed_data.pkl', 'rb') as file:
             df = pickle.load(file)
 
+        df = df.drop_duplicates(subset='id')
+
         # Remove games where main_story, main_extra, and completionist are 0
         df = df[(df['main_story'] > 0) | (df['main_extra'] > 0) | (df['completionist'] > 0)]
 
@@ -200,7 +202,7 @@ class CleanData:
 
 cleaner = CleanData()  # Create an instance of the CleanData class
 # df = cleaner.get_data("../assets/games.json")
-# cleaned_df = cleaner.clean_data_gameplay()
-top_games_df = cleaner.select_top_games()
+cleaned_df = cleaner.clean_data_gameplay()
+# top_games_df = cleaner.select_top_games()
 # upcoming_games_df = cleaner.get_upcoming_games()
 # combined_games_df = cleaner.combined_data_search()

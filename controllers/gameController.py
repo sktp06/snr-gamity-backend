@@ -7,6 +7,7 @@ import pickle
 from spellchecker import SpellChecker
 
 from models.game import Game
+from models.gamePlay import GamePlay
 from models.topGame import TopGame
 from sqlalchemy import or_
 
@@ -79,16 +80,39 @@ class GameController:
 
     @staticmethod
     def get_clean_gameplay():
-        with open('clean_gameplay.pkl', 'rb') as file:
-            games = pickle.load(file)
+        gameplay = GamePlay.query.all()
 
-        # Convert the list of dictionaries to a DataFrame
-        df = pd.DataFrame(games)
+        # Create a list to store the top games
+        games = []
 
-        # Convert the DataFrame to a dictionary with 'records' orientation
-        game_dict = df.to_dict('records')
+        # Iterate over each game
+        for game in gameplay:
+            # Convert the game to a dictionary
+            game_dict = {
+                "id": game.id,
+                "cover": game.cover,
+                "genres": ast.literal_eval(game.genres),  # Assign the converted list
+                "name": game.name,
+                "summary": game.summary,
+                "url": game.url,
+                "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+                "main_story": game.main_story,
+                "main_extra": game.main_extra,
+                "completionist": game.completionist,
+                "aggregated_rating": game.aggregated_rating,
+                "aggregated_rating_count": game.aggregated_rating_count,
+                "rating": game.rating,
+                "rating_count": game.rating_count,
+                "release_dates": game.release_dates,
+                "storyline": game.storyline,
+                "unclean_name": game.unclean_name,
+                "unclean_summary": game.unclean_summary,
+                "popularity": game.popularity
+            }
+            games.append(game_dict)
 
-        return jsonify({'content': game_dict}), 200
+        # Return the list of games
+        return jsonify({'content': games}), 200
 
     @staticmethod
     def get_upcoming():
