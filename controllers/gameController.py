@@ -171,10 +171,10 @@ class GameController:
 
     @staticmethod
     def search():
-        query = request.json['query']
+        query = request.json.get('query')
 
         if query is None:
-            return jsonify({'error': 'Query cannot be null'}), 400
+            return jsonify({'error': 'Query cannot be null or empty'}), 400
 
         corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
@@ -215,5 +215,6 @@ class GameController:
             'corrected_query': corrected_query,
             'content': games
         }), 200
+
 
 

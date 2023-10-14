@@ -11,7 +11,7 @@ from models.recommend import Recommend
 class BookmarkController:
     @staticmethod
     def getBookmarkByUserId():
-        userId = request.json['userId']
+        userId = request.json.get('userId')
         bookmarks = Bookmark.query.filter_by(user_id=userId).all()
         if not bookmarks:
             return jsonify({'message': 'The bookmark list is empty'}), 404

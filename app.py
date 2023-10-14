@@ -110,7 +110,7 @@ def get_game_statistics():
         return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
-@app.route('/game/clean_data', methods=['GET'])
+@app.route('/game/clean_gameplay', methods=['GET'])
 def get_clean_gameplay():
     try:
         gameplay = GamePlay.query.all()
@@ -149,6 +149,7 @@ def get_clean_gameplay():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500
+
 
 @app.route('/game/upcoming', methods=['GET'])
 def get_upcoming():
@@ -196,7 +197,7 @@ def get_upcoming():
 
 @app.route('/bookmarks/', methods=['POST'])
 def getBookmarkByUserId():
-    userId = request.json['userId']
+    userId = request.json.get('userId')
     bookmarks = Bookmark.query.filter_by(user_id=userId).all()
     if not bookmarks:
         return jsonify({'message': 'The bookmark list is empty'}), 404
@@ -243,6 +244,21 @@ def addBookmark():
         return jsonify({'message': 'The bookmark has been added successfully'}), 200
     except:
         return jsonify({'message': 'Failed to add, maybe you already have this game in the list.'}), 400
+
+
+@app.route('/bookmarks/remove', methods=['POST'])
+def removeBookmark():
+    try:
+        userId = request.json['userId']
+        gameId = request.json['gameId']
+        bookmark = Bookmark.query.filter_by(user_id=userId, game_id=gameId).first()
+        # if not bookmark:
+        #     return jsonify({'message': 'This bookmark does not exist'}), 404
+        db.session.delete(bookmark)
+        db.session.commit()
+        return jsonify({'message': 'The bookmark has been deleted successfully'}), 200
+    except:
+        return jsonify({'message': 'Failed to remove from the list'}), 400
 
 
 @app.route('/auth/register', methods=['POST'])
@@ -343,13 +359,13 @@ def recommendGames():
 
 @app.route('/game/search', methods=['POST'])
 def search():
-    query = request.json['query']
+    query = request.json.get('query')
+
     if query is None:
         return jsonify({'error': 'Query cannot be null'}), 400
 
     corrected_query = " ".join([spell_checker.correction(word) for word in query.split()])
 
-    # Perform a database query to search for games
     results = Game.query.filter(
         or_(
             Game.name.ilike(f'%{corrected_query}%'),
@@ -357,17 +373,16 @@ def search():
         )
     ).all()
 
-    # Convert the query results to a list of dictionaries with genres and websites as lists
     games = []
     for game in results:
         game_dict = {
             "id": game.id,
             "cover": game.cover,
-            "genres": ast.literal_eval(game.genres),  # Assign the converted list
+            "genres": ast.literal_eval(game.genres),
             "name": game.name,
             "summary": game.summary,
             "url": game.url,
-            "websites": ast.literal_eval(game.websites),  # Convert websites to a list
+            "websites": ast.literal_eval(game.websites),
             "main_story": game.main_story,
             "main_extra": game.main_extra,
             "completionist": game.completionist,
